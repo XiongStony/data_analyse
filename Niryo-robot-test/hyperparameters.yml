@@ -1,0 +1,3 @@
+real-blood-meat-time:
+  materials: {'V':'Vessel', 'T':'Tissue'}
+  realmater: ["Silicone/Water","Silicone"]
