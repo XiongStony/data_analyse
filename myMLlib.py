@@ -1,4 +1,7 @@
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import math
 import numpy as np
 import random
 import matplotlib.pyplot as plt
@@ -25,6 +28,19 @@ def plt_confusion(cm, objects, fs=(8,6)):
     plt.ylabel("True Label")
     plt.title("Confusion Matrix")
     plt.show()
+# feature extraction & reduced order modeling
+def multi_SA_memwise(Ulist, r=None, weights=None):
+    Ucut = [U[:, : (r or min(U.shape[1] for U in Ulist))] for U in Ulist]
+    Ustack = np.stack(Ucut)                          # (m,d,r)
+    if weights is None:
+        # C[d,e] = sum_{m,r} U[m,d,r] * U[m,e,r]
+        C = np.tensordot(Ustack, Ustack, axes=([0,2],[0,2]))   # (d,d)
+    else:
+        w = np.asarray(weights, float)[:, None, None]           # (m,1,1)
+        C = np.tensordot(w * Ustack, Ustack, axes=([0,2],[0,2]))
+    eigvals, eigvecs = np.linalg.eigh(C)
+    idx = np.argsort(eigvals)[::-1][:Ustack.shape[2]]
+    return eigvecs[:, idx]                          # U_shared
 def DEIM(Ur):
     n, r = Ur.shape            # Ur: (n, r)，列为基向量
     U = NumpyVectorSpace(n).from_numpy(Ur.T)  # 传入形状 (r, n)
@@ -50,23 +66,6 @@ def plt_loss(train_losses, test_losses=None, verifying_losses=None):
     plt.title("Loss Over Epochs")
     plt.legend()
     plt.show()
-
-class LSTMModel(torch.nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, num_classes):
-        super().__init__()
-        self.lstm = torch.nn.LSTM(input_size, hidden_size, num_layers,
-                            batch_first=True, bidirectional=False)
-        # 分类头：把最后一个时间步的隐藏状态映射到类别数
-        self.classifier = torch.nn.Linear(hidden_size, num_classes)
-
-    def forward(self, x):
-        # x: [batch, seq_len, input_size]
-        output, (hn, cn) = self.lstm(x)
-        # hn: [num_layers, batch, hidden_size]
-        last_hidden = hn[-1]                # 取最后一层的隐藏状态 [batch, hidden_size]
-        logits = self.classifier(last_hidden)  # [batch, num_classes]
-        return logits
-    
 
 class CustomDataset(Dataset):
     def __init__(self, X, y):
@@ -102,7 +101,7 @@ class BalancedBatchSampler(Sampler):
                 batch.append(self.neg_idx[(i*self.half + j) % len(self.neg_idx)])
             yield batch
 
-def load_feather(folderpath, materials, N=None):
+def load_feather(folderpath, materials, N=None, rand = False):
     # 如果调用时没有传入 N，就根据 folderpath 的长度生成一个全是 3e5 的列表
     if N is None:
         N = [3e5] * len(folderpath)
@@ -113,6 +112,8 @@ def load_feather(folderpath, materials, N=None):
         data_list.append([])   # 动态创建子列表
         labels.append([])      # 同上
         files = os.listdir(folder)
+        if rand:
+            random.shuffle(files)
         if len(files) > N[j]:
             files = files[0:N[j]]
         for i in range(len(materials)):
@@ -228,9 +229,127 @@ def neuron_activation(model, device, data, fclayer='fc1', neuron_index=0):
     layer_output = activations[fclayer]   # shape: (batch_size, num_neurons)
     
     if neuron_index >= layer_output.shape[1]:
-        raise ValueError(f"neuron_index {neuron_index} 超出该层维度 {layer_output.shape[1]}")
+        raise ValueError(f"neuron_index {neuron_index} exceed dimension {layer_output.shape[1]}")
     
     neuron_activations = layer_output[:, neuron_index]  # shape: (batch_size,)
     handle.remove()
     return neuron_activations
-    
+
+
+# ------Neural Networks--------
+
+# --- your attention block (unchanged) ---
+class MultiHeadSelfAttention(nn.Module):
+    def __init__(self, embed_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, causal=False, bias=True):
+        super().__init__()
+        assert embed_dim % num_heads == 0
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+        self.head_dim = embed_dim // num_heads
+        self.causal = causal
+        self.qkv = nn.Linear(embed_dim, 3 * embed_dim, bias=bias)
+        self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
+        self.attn_dropout = attn_dropout
+        self.proj_dropout = nn.Dropout(proj_dropout)
+
+    def forward(self, x, key_padding_mask=None):
+        B, T, C = x.shape
+        qkv = self.qkv(x)                 # (B, T, 3C)
+        q, k, v = qkv.chunk(3, dim=-1)    # each (B, T, C)
+
+        def reshape_heads(t):
+            return t.view(B, T, self.num_heads, C // self.num_heads).transpose(1, 2)  # (B, H, T, D)
+        q, k, v = map(reshape_heads, (q, k, v))
+
+        attn_mask = None
+        if key_padding_mask is not None:
+            attn_mask = key_padding_mask[:, None, None, :]  # (B,1,1,T)
+
+        y = F.scaled_dot_product_attention(
+            q, k, v,
+            attn_mask=attn_mask,
+            dropout_p=0.0 if not self.training else self.attn_dropout,
+            is_causal=self.causal
+        )  # (B, H, T, D)
+
+        y = y.transpose(1, 2).contiguous().view(B, T, C)  # (B, T, C)
+        y = self.out_proj(y)
+        y = self.proj_dropout(y)
+        return y
+
+# --- a tiny model that uses it ---
+class TinyClassifier(nn.Module):
+    def __init__(self, vocab_size=100, embed_dim=64, num_heads=4, num_classes=3, max_len=32):
+        super().__init__()
+        self.embed = nn.Embedding(vocab_size, embed_dim)
+        self.attn = MultiHeadSelfAttention(embed_dim, num_heads, attn_dropout=0.1, proj_dropout=0.1)
+        self.ln = nn.LayerNorm(embed_dim)
+        self.cls = nn.Linear(embed_dim, num_classes)
+
+    def forward(self, token_ids):  # token_ids: (B, T)
+        x = self.embed(token_ids)          # (B, T, C)
+        x = self.attn(x)                   # (B, T, C)  q/k/v are produced & used here
+        x = self.ln(x)
+        x = x.mean(dim=1)                  # simple pooling
+        logits = self.cls(x)               # (B, num_classes)
+        return logits
+class SinusoidalPositionalEncoding(nn.Module):
+    """
+    Classic Vaswani et al. (2017) sinusoidal encoding.
+    Adds a fixed, non-trainable position embedding to x of shape (B, T, C).
+
+    Args:
+        embed_dim: C
+        max_len:   maximum sequence length you expect
+        base:      wavelength base (usually 10000)
+        dropout:   optional dropout after adding PE
+        scale:     if True, scale x by sqrt(C) before adding PE (common in some impls)
+    """
+    def __init__(self, embed_dim, max_len=10000, base=10000.0, dropout=0.0, scale=False):
+        super().__init__()
+        self.embed_dim = embed_dim
+        self.scale = math.sqrt(embed_dim) if scale else 1.0
+        self.dropout = nn.Dropout(dropout) if dropout > 0 else nn.Identity()
+
+        # Create (max_len, C) table
+        pe = torch.zeros(max_len, embed_dim)
+        position = torch.arange(0, max_len, dtype=torch.float32).unsqueeze(1)           # (max_len, 1)
+        div_term = torch.exp(
+            torch.arange(0, embed_dim, 2, dtype=torch.float32) * (-math.log(base) / embed_dim)
+        )  # (C/2,)
+
+        pe[:, 0::2] = torch.sin(position * div_term)  # even dims
+        pe[:, 1::2] = torch.cos(position * div_term)  # odd dims
+
+        # Shape to (1, max_len, C) for easy slicing/broadcast
+        pe = pe.unsqueeze(0)  # (1, max_len, C)
+
+        # Register as buffer (moves with .to(device), not a parameter)
+        self.register_buffer("pe", pe, persistent=False)
+
+    def forward(self, x, offset: int = 0):
+        """
+        x: (B, T, C)
+        offset: starting position index (useful for chunked/streaming)
+        """
+        B, T, C = x.shape
+        # Ensure dtype matches x to avoid AMP/dtype issues
+        pe_slice = self.pe[:, offset:offset+T, :].to(dtype=x.dtype)
+        x = x * self.scale + pe_slice
+        return self.dropout(x)
+
+class LSTMModel(torch.nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers, num_classes):
+        super().__init__()
+        self.lstm = torch.nn.LSTM(input_size, hidden_size, num_layers,
+                            batch_first=True, bidirectional=False)
+        # 分类头：把最后一个时间步的隐藏状态映射到类别数
+        self.classifier = torch.nn.Linear(hidden_size, num_classes)
+
+    def forward(self, x):
+        # x: [batch, seq_len, input_size]
+        output, (hn, cn) = self.lstm(x)
+        # hn: [num_layers, batch, hidden_size]
+        last_hidden = hn[-1]                # 取最后一层的隐藏状态 [batch, hidden_size]
+        logits = self.classifier(last_hidden)  # [batch, num_classes]
+        return logits
