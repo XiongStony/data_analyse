@@ -240,20 +240,22 @@ def neuron_activation(model, device, data, fclayer='fc1', neuron_index=0):
 
 # --- your attention block (unchanged) ---
 class MultiHeadSelfAttention(nn.Module):
-    def __init__(self, embed_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, causal=False, bias=True):
+    def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, causal=False, bias=True):
         super().__init__()
-        assert embed_dim % num_heads == 0
-        self.embed_dim = embed_dim
+        assert vec_dim % num_heads == 0
+        self.embed_dim = vec_dim
         self.num_heads = num_heads
-        self.head_dim = embed_dim // num_heads
+        self.head_dim = vec_dim // num_heads
         self.causal = causal
-        self.qkv = nn.Linear(embed_dim, 3 * embed_dim, bias=bias)
-        self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
+        self.pos_enc = SinusoidalPositionalEncoding(vec_dim)
+        self.qkv = nn.Linear(vec_dim, 3 * vec_dim, bias=bias)
+        self.out_proj = nn.Linear(vec_dim, vec_dim, bias=bias)
         self.attn_dropout = attn_dropout
         self.proj_dropout = nn.Dropout(proj_dropout)
 
     def forward(self, x, key_padding_mask=None):
         B, T, C = x.shape
+        x = self.pos_enc(x)
         qkv = self.qkv(x)                 # (B, T, 3C)
         q, k, v = qkv.chunk(3, dim=-1)    # each (B, T, C)
 
@@ -278,20 +280,42 @@ class MultiHeadSelfAttention(nn.Module):
         return y
 
 # --- a tiny model that uses it ---
-class TinyClassifier(nn.Module):
-    def __init__(self, vocab_size=100, embed_dim=64, num_heads=4, num_classes=3, max_len=32):
+# def __init__(self, neural_num_list, actfunc:str = 'GELU', p_drop=0.0, *args, **kwargs):
+#     super().__init__(*args, **kwargs)
+class MLP(nn.Module):
+    def __init__(self, neural_num_list:list, actfunc:str = 'GELU', p_drop=0.0):
         super().__init__()
-        self.embed = nn.Embedding(vocab_size, embed_dim)
-        self.attn = MultiHeadSelfAttention(embed_dim, num_heads, attn_dropout=0.1, proj_dropout=0.1)
-        self.ln = nn.LayerNorm(embed_dim)
-        self.cls = nn.Linear(embed_dim, num_classes)
+        match actfunc:
+            case 'GELU':
+                self.actf = nn.GELU
+            case 'ELU':
+                self.actf = nn.ELU
+            case _:
+                self.actf = nn.ReLU
+        layer = []
+        for i, (preneural_num, neural_num) in enumerate(zip(neural_num_list[:-1],neural_num_list[1:])):
+            layer.append(nn.Linear(preneural_num,neural_num))
+            if i < len(neural_num_list) - 2:
+                layer.append(self.actf())
+                layer.append(nn.Dropout(p_drop))
+        self.net = nn.Sequential(*layer)
+    def forward(self,x):
+        x = self.net(x)
+        return x
 
-    def forward(self, token_ids):  # token_ids: (B, T)
-        x = self.embed(token_ids)          # (B, T, C)
+class TinyClassifier(nn.Module):
+    def __init__(self, vec_dim=64, num_heads=4, num_classes=2):
+        super().__init__()
+        self.attn = MultiHeadSelfAttention(vec_dim, num_heads, attn_dropout=0.1, proj_dropout=0.1)
+        self.ln = nn.LayerNorm(vec_dim)
+        self.classifier = MLP([vec_dim,24,num_classes], actfunc='GELU')
+
+    def forward(self,x):  # token_ids: (B, T)
         x = self.attn(x)                   # (B, T, C)  q/k/v are produced & used here
         x = self.ln(x)
-        x = x.mean(dim=1)                  # simple pooling
-        logits = self.cls(x)               # (B, num_classes)
+        # x = x.mean(dim=1)                  # simple pooling
+        x = x[:,0,:]
+        logits = self.classifier(x)               # (B, num_classes)
         return logits
 class SinusoidalPositionalEncoding(nn.Module):
     """
