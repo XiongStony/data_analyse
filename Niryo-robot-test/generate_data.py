@@ -15,8 +15,14 @@ def generate_data():
     X_cos_new = np.stack(X_cos[index], axis=0)
     y_sin = np.zeros(X_sin_new.shape[0])
     y_cos = np.ones(X_cos_new.shape[0])
-    y_sin = np.expand_dims(y_sin, axis=0)
-    y_cos = np.expand_dims(y_cos, axis=0)
+    y_sin = np.expand_dims(y_sin, axis=1)
+    y_cos = np.expand_dims(y_cos, axis=1)
     return X_sin_new, y_sin, X_cos_new, y_cos
 if __name__ == "__main__":
-    generate_data()
+    data1, y1, data2, y2 = generate_data()
+    print(
+        'data1 = ', data1.shape,
+        'y1 =', y1.shape,
+        'data2 =', data2.shape,
+        'y2 =', y2.shape
+    )

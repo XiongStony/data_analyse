@@ -306,11 +306,16 @@ class MLP(nn.Module):
 class TinyClassifier(nn.Module):
     def __init__(self, vec_dim=64, num_heads=4, num_classes=2):
         super().__init__()
+        self.cls = nn.Parameter(torch.zeros(1, 1, vec_dim))
+        nn.init.trunc_normal_(self.cls,std=0.02)
         self.attn = MultiHeadSelfAttention(vec_dim, num_heads, attn_dropout=0.1, proj_dropout=0.1)
         self.ln = nn.LayerNorm(vec_dim)
         self.classifier = MLP([vec_dim,24,num_classes], actfunc='GELU')
 
     def forward(self,x):  # token_ids: (B, T)
+        B, T, C = x.shape
+        cls = self.cls.expand(B,1,C)
+        x = torch.cat((cls, x), dim=1)
         x = self.attn(x)                   # (B, T, C)  q/k/v are produced & used here
         x = self.ln(x)
         # x = x.mean(dim=1)                  # simple pooling
