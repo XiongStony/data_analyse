@@ -1,5 +1,5 @@
 import torch
-import tqdm
+from tqdm.notebook import tqdm  # Import tqdm for progress bar
 
 
 def full_batch_train(

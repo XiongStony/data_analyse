@@ -28,24 +28,6 @@ def plt_confusion(cm, objects, fs=(8,6)):
     plt.ylabel("True Label")
     plt.title("Confusion Matrix")
     plt.show()
-# feature extraction & reduced order modeling
-def multi_SA_memwise(Ulist, r=None, weights=None):
-    Ucut = [U[:, : (r or min(U.shape[1] for U in Ulist))] for U in Ulist]
-    Ustack = np.stack(Ucut)                          # (m,d,r)
-    if weights is None:
-        # C[d,e] = sum_{m,r} U[m,d,r] * U[m,e,r]
-        C = np.tensordot(Ustack, Ustack, axes=([0,2],[0,2]))   # (d,d)
-    else:
-        w = np.asarray(weights, float)[:, None, None]           # (m,1,1)
-        C = np.tensordot(w * Ustack, Ustack, axes=([0,2],[0,2]))
-    eigvals, eigvecs = np.linalg.eigh(C)
-    idx = np.argsort(eigvals)[::-1][:Ustack.shape[2]]
-    return eigvecs[:, idx]                          # U_shared
-def DEIM(Ur):
-    n, r = Ur.shape            # Ur: (n, r)，列为基向量
-    U = NumpyVectorSpace(n).from_numpy(Ur)
-    dofs, _, _ = deim(U, modes=r, pod=False)
-    return dofs                # 若需要选择矩阵：np.eye(n)[:, dofs]
 
 def plt_loss(train_losses, test_losses=None, verifying_losses=None):
     plt.figure(figsize=(10, 5))
@@ -66,6 +48,24 @@ def plt_loss(train_losses, test_losses=None, verifying_losses=None):
     plt.title("Loss Over Epochs")
     plt.legend()
     plt.show()
+# feature extraction & reduced order modeling
+def multi_SA_memwise(Ulist, r=None, weights=None):
+    Ucut = [U[:, : (r or min(U.shape[1] for U in Ulist))] for U in Ulist]
+    Ustack = np.stack(Ucut)                          # (m,d,r)
+    if weights is None:
+        # C[d,e] = sum_{m,r} U[m,d,r] * U[m,e,r]
+        C = np.tensordot(Ustack, Ustack, axes=([0,2],[0,2]))   # (d,d)
+    else:
+        w = np.asarray(weights, float)[:, None, None]           # (m,1,1)
+        C = np.tensordot(w * Ustack, Ustack, axes=([0,2],[0,2]))
+    eigvals, eigvecs = np.linalg.eigh(C)
+    idx = np.argsort(eigvals)[::-1][:Ustack.shape[2]]
+    return eigvecs[:, idx]                          # U_shared
+def DEIM(Ur):
+    n, r = Ur.shape            # Ur: (n, r)，列为基向量
+    U = NumpyVectorSpace(n).from_numpy(Ur)
+    dofs, _, _ = deim(U, modes=r, pod=False)
+    return dofs                # 若需要选择矩阵：np.eye(n)[:, dofs]
 
 class CustomDataset(Dataset):
     def __init__(self, X, y):
