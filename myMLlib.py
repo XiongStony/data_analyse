@@ -240,7 +240,7 @@ def neuron_activation(model, device, data, fclayer='fc1', neuron_index=0):
 
 # --- your attention block (unchanged) ---
 class MultiHeadSelfAttention(nn.Module):
-    def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, causal=False, bias=True):
+    def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, causal=False, bias=True, bert = True):
         super().__init__()
         assert vec_dim % num_heads == 0
         self.embed_dim = vec_dim
@@ -252,6 +252,7 @@ class MultiHeadSelfAttention(nn.Module):
         self.out_proj = nn.Linear(vec_dim, vec_dim, bias=bias)
         self.attn_dropout = attn_dropout
         self.proj_dropout = nn.Dropout(proj_dropout)
+        self.bert = bert
 
     def forward(self, x, key_padding_mask=None):
         B, T, C = x.shape
@@ -262,11 +263,11 @@ class MultiHeadSelfAttention(nn.Module):
         def reshape_heads(t):
             return t.view(B, T, self.num_heads, C // self.num_heads).transpose(1, 2)  # (B, H, T, D)
         q, k, v = map(reshape_heads, (q, k, v))
-
+        if self.bert:
+            q = q[:,:,0:1,:]
         attn_mask = None
         if key_padding_mask is not None:
             attn_mask = key_padding_mask[:, None, None, :]  # (B,1,1,T)
-
         y = F.scaled_dot_product_attention(
             q, k, v,
             attn_mask=attn_mask,
@@ -274,7 +275,7 @@ class MultiHeadSelfAttention(nn.Module):
             is_causal=self.causal
         )  # (B, H, T, D)
 
-        y = y.transpose(1, 2).contiguous().view(B, T, C)  # (B, T, C)
+        y = y.transpose(1, 2).contiguous().view(B, -1, C)  # (B, T, C)
         y = self.out_proj(y)
         y = self.proj_dropout(y)
         return y
