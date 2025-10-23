@@ -43,7 +43,7 @@ def multi_SA_memwise(Ulist, r=None, weights=None):
     return eigvecs[:, idx]                          # U_shared
 def DEIM(Ur):
     n, r = Ur.shape            # Ur: (n, r)，列为基向量
-    U = NumpyVectorSpace(n).from_numpy(Ur.T)  # 传入形状 (r, n)
+    U = NumpyVectorSpace(n).from_numpy(Ur)
     dofs, _, _ = deim(U, modes=r, pod=False)
     return dofs                # 若需要选择矩阵：np.eye(n)[:, dofs]
 
@@ -352,7 +352,7 @@ class TinyClassifier(nn.Module):
         super().__init__()
         self.cls = nn.Parameter(torch.zeros(1, 1, vec_dim))
         nn.init.trunc_normal_(self.cls,std=0.02)
-        self.attn = MultiHeadSelfAttention(vec_dim, num_heads, attn_dropout=0.1, proj_dropout=0.1)
+        self.attn = BertMHSelfAttention(vec_dim, num_heads, attn_dropout=0.1, proj_dropout=0.1)
         self.ln = nn.LayerNorm(vec_dim)
         self.classifier = MLP([vec_dim,24,num_classes], actfunc='GELU')
 
@@ -360,10 +360,9 @@ class TinyClassifier(nn.Module):
         B, T, C = x.shape
         cls = self.cls.expand(B,1,C)
         x = torch.cat((cls, x), dim=1)
-        x = self.attn(x)                   # (B, T, C)  q/k/v are produced & used here
+        x = self.attn(x)                   # (B, C)  q/k/v are produced & used here
         x = self.ln(x)
         # x = x.mean(dim=1)                  # simple pooling
-        x = x[:,0,:]
         logits = self.classifier(x)               # (B, num_classes)
         return logits
 class SinusoidalPositionalEncoding(nn.Module):
