@@ -125,6 +125,30 @@ def load_feather(folderpath, materials, N=None, rand = False):
                 labels[j].append(i)
     return data_list, labels
 
+def load_feather_TS(folderpath, materials, N=None, rand = False):
+    # 如果调用时没有传入 N，就根据 folderpath 的长度生成一个全是 3e5 的列表
+    if N is None:
+        N = [3e5] * len(folderpath)
+    N = [int(x) for x in N]
+    data_list = []
+    labels = []
+    for j, folder in enumerate(folderpath):
+        data_list.append([])   # 动态创建子列表
+        labels.append([])      # 同上
+        files = os.listdir(folder)
+        if rand:
+            random.shuffle(files)
+        if len(files) > N[j]:
+            files = files[0:N[j]]
+        for i in range(len(materials)):
+            matching_files = [f for f in files if materials[i] and 'repo 0'in f]
+            for path in matching_files:
+                data = pd.read_feather(f'{folder}/{path}')
+                trans = data.values
+                data_list[j].append(trans)
+                labels[j].append(i)
+    return data_list, labels
+
 def load_data_list(folderpath, materials, N=None):
     # 如果调用时没有传入 N，就根据 folderpath 的长度生成一个全是 3e5 的列表
     if N is None:
