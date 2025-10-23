@@ -240,7 +240,7 @@ def neuron_activation(model, device, data, fclayer='fc1', neuron_index=0):
 
 # --- your attention block (unchanged) ---
 class MultiHeadSelfAttention(nn.Module):
-    def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, causal=False, bias=True, bert = True):
+    def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, causal=False, bias=True):
         super().__init__()
         assert vec_dim % num_heads == 0
         self.embed_dim = vec_dim
@@ -252,7 +252,7 @@ class MultiHeadSelfAttention(nn.Module):
         self.out_proj = nn.Linear(vec_dim, vec_dim, bias=bias)
         self.attn_dropout = attn_dropout
         self.proj_dropout = nn.Dropout(proj_dropout)
-        self.bert = bert
+
 
     def forward(self, x, key_padding_mask=None):
         B, T, C = x.shape
@@ -263,8 +263,6 @@ class MultiHeadSelfAttention(nn.Module):
         def reshape_heads(t):
             return t.view(B, T, self.num_heads, C // self.num_heads).transpose(1, 2)  # (B, H, T, D)
         q, k, v = map(reshape_heads, (q, k, v))
-        if self.bert:
-            q = q[:,:,0:1,:]
         attn_mask = None
         if key_padding_mask is not None:
             attn_mask = key_padding_mask[:, None, None, :]  # (B,1,1,T)
@@ -275,8 +273,53 @@ class MultiHeadSelfAttention(nn.Module):
             is_causal=self.causal
         )  # (B, H, T, D)
 
-        y = y.transpose(1, 2).contiguous().view(B, -1, C)  # (B, T, C)
+        y = y.transpose(1, 2).contiguous().view(B, T, C)  # (B, T, C)
         y = self.out_proj(y)
+        y = self.proj_dropout(y)
+        return y
+class BertMHSelfAttention(nn.Module):
+    def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, causal=False, bias=True):
+        super().__init__()
+        assert vec_dim % num_heads == 0
+        self.embed_dim = vec_dim
+        self.num_heads = num_heads
+        self.head_dim = vec_dim // num_heads
+        self.causal = causal            # BERT usually False
+        self.pos_enc = SinusoidalPositionalEncoding(vec_dim)
+
+        self.Wq  = nn.Linear(vec_dim, vec_dim, bias=bias)
+        self.Wkv = nn.Linear(vec_dim, 2 * vec_dim, bias=bias)   # -> (K,V)
+        self.out_proj = nn.Linear(vec_dim, vec_dim, bias=bias)
+
+        self.attn_dropout = float(attn_dropout)
+        self.proj_dropout = nn.Dropout(proj_dropout)
+
+    def forward(self, x, key_padding_mask=None):
+        B, T, C = x.shape
+        x = self.pos_enc(x)                     # (B, T, C)
+        q = self.Wq(x[:, :1, :])                # (B, 1, C)
+        kv = self.Wkv(x)                        # (B, T, 2C)
+        k, v = kv.chunk(2, dim=-1)              # (B, T, C), (B, T, C)
+
+        def reshape_heads(t):                   # -> (B, H, Tq_or_T, D)
+            return t.view(B, -1, self.num_heads, C // self.num_heads).transpose(1, 2)
+
+        q, k, v = map(reshape_heads, (q, k, v)) # q:(B,H,1,D) k/v:(B,H,T,D)
+
+        # Note：PyTorch SDPA 的 bool mask == True
+        attn_mask = None
+        if key_padding_mask is not None:        # key_padding_mask: (B,T) with True for PAD
+            attn_mask = key_padding_mask[:, None, None, :]   # (B,1,1,T)
+
+        y = F.scaled_dot_product_attention(
+            q, k, v,
+            attn_mask=attn_mask,                # bool 或 float mask 都可
+            dropout_p=self.attn_dropout if self.training else 0.0,
+            is_causal=self.causal               # BERT usually False；True 
+        )                                        # (B, H, 1, D)
+
+        y = y.transpose(1, 2).contiguous().view(B, C)   # (B, C) not (B, 1, C)
+        y = self.out_proj(y)                                 # (B, C)
         y = self.proj_dropout(y)
         return y
 
