@@ -11,6 +11,8 @@ from pymor.vectorarrays.numpy import NumpyVectorSpace
 from torch.utils.data import Dataset, Sampler
 import os
 import pandas as pd
+from tqdm.notebook import tqdm  # Import tqdm for progress bar
+from torch.nn.attention import sdpa_kernel, SDPBackend
 def set_seed(seed=42,deterministic = True, benchmark = False):
     torch.manual_seed(seed)             # CPU随机性
     torch.cuda.manual_seed(seed)        # GPU随机性（单卡）
@@ -125,28 +127,40 @@ def load_feather(folderpath, materials, N=None, rand = False):
                 labels[j].append(i)
     return data_list, labels
 
-def load_feather_TS(folderpath, materials, N=None, rand = False):
+def get_num(files, descriptionp="", descriptionb=""):
+    num = 0
+    while True:
+        patt = f"{descriptionp}{num}{descriptionb}"
+        # look for *substring* inside any filename
+        if any(patt in f for f in files):
+            num += 1
+        else:
+            return num
+
+def load_feather_TS(folderpath, materials, loop_num_list):
     # 如果调用时没有传入 N，就根据 folderpath 的长度生成一个全是 3e5 的列表
-    if N is None:
-        N = [3e5] * len(folderpath)
-    N = [int(x) for x in N]
     data_list = []
     labels = []
+    loop_num_list = [int(num) for num in loop_num_list]
     for j, folder in enumerate(folderpath):
         data_list.append([])   # 动态创建子列表
         labels.append([])      # 同上
         files = os.listdir(folder)
-        if rand:
-            random.shuffle(files)
-        if len(files) > N[j]:
-            files = files[0:N[j]]
         for i in range(len(materials)):
-            matching_files = [f for f in files if materials[i] and 'repo 0'in f]
-            for path in matching_files:
-                data = pd.read_feather(f'{folder}/{path}')
-                trans = data.values
-                data_list[j].append(trans)
-                labels[j].append(i)
+            matching_files = [f for f in files if materials[i] in f]
+            material = materials[i]
+            pos1_num = get_num(matching_files,descriptionp='position-')
+            for loop in range(loop_num_list[j]):
+                for pos1 in range(pos1_num):
+                    for pos2 in range(1,6):
+                        little_list = []
+                        for rep in range(5):
+                            path = f'loop-{loop}_{material}_position-{pos1}-{pos2}_rep-{rep}.feather'
+                            data = pd.read_feather(f'{folder}/{path}')
+                            trans = data.values
+                            little_list.append(trans)
+                        data_list[j].append(little_list)
+                        labels[j].append(i)
     return data_list, labels
 
 def load_data_list(folderpath, materials, N=None):
@@ -326,6 +340,7 @@ class BertMHSelfAttention(nn.Module):
         k, v = kv.chunk(2, dim=-1)              # (B, T, C), (B, T, C)
 
         def reshape_heads(t):                   # -> (B, H, Tq_or_T, D)
+            t = t.contiguous()
             return t.view(B, -1, self.num_heads, C // self.num_heads).transpose(1, 2)
 
         q, k, v = map(reshape_heads, (q, k, v)) # q:(B,H,1,D) k/v:(B,H,T,D)
@@ -335,12 +350,14 @@ class BertMHSelfAttention(nn.Module):
         if key_padding_mask is not None:        # key_padding_mask: (B,T) with True for PAD
             attn_mask = key_padding_mask[:, None, None, :]   # (B,1,1,T)
 
-        y = F.scaled_dot_product_attention(
-            q, k, v,
-            attn_mask=attn_mask,                # bool 或 float mask 都可
-            dropout_p=self.attn_dropout if self.training else 0.0,
-            is_causal=self.causal               # BERT usually False；True 
-        )                                        # (B, H, 1, D)
+        with sdpa_kernel(SDPBackend.MATH):
+            y = F.scaled_dot_product_attention(
+                q, k, v,
+                attn_mask=attn_mask,
+                dropout_p=self.attn_dropout if self.training else 0.0,
+                is_causal=self.causal
+            )
+
 
         y = y.transpose(1, 2).contiguous().view(B, C)   # (B, C) not (B, 1, C)
         y = self.out_proj(y)                                 # (B, C)
@@ -372,13 +389,13 @@ class MLP(nn.Module):
         return x
 
 class TinyClassifier(nn.Module):
-    def __init__(self, vec_dim=64, num_heads=4, num_classes=2):
+    def __init__(self, vec_dim=64, num_heads=4, num_classes=2, dropout = 0.1):
         super().__init__()
         self.cls = nn.Parameter(torch.zeros(1, 1, vec_dim))
         nn.init.trunc_normal_(self.cls,std=0.02)
-        self.attn = BertMHSelfAttention(vec_dim, num_heads, attn_dropout=0.1, proj_dropout=0.1)
+        self.attn = BertMHSelfAttention(vec_dim, num_heads, attn_dropout=dropout, proj_dropout=dropout)
         self.ln = nn.LayerNorm(vec_dim)
-        self.classifier = MLP([vec_dim,24,num_classes], actfunc='GELU')
+        self.classifier = MLP([vec_dim,24,num_classes], actfunc='GELU',dropout = 0.1)
 
     def forward(self,x):  # token_ids: (B, T)
         B, T, C = x.shape
@@ -449,3 +466,86 @@ class LSTMModel(torch.nn.Module):
         last_hidden = hn[-1]                # 取最后一层的隐藏状态 [batch, hidden_size]
         logits = self.classifier(last_hidden)  # [batch, num_classes]
         return logits
+
+def full_batch_train(
+        model,optimizer,
+        criterion,
+        num_epochs,
+        X_train_tensor,y_train_tensor,
+        X_r_ver_tensor,y_r_ver_tensor
+    ):
+    train_losses = []
+    verify_losses = []
+
+    pbar = tqdm(range(int(num_epochs)), desc="Training", leave=True)
+    for epoch in pbar:
+        model.train()
+        optimizer.zero_grad()
+        outputs = model(X_train_tensor)
+        loss = criterion(outputs, y_train_tensor)
+        loss.backward()
+        optimizer.step()
+        train_losses.append(loss.item())
+        # —— 2. 验证 —— #
+        model.eval()
+        with torch.no_grad():
+            verify_outputs = model(X_r_ver_tensor)
+            verify_loss = criterion(verify_outputs, y_r_ver_tensor)
+            verify_losses.append(verify_loss.item())
+        # —— 3. 更新 tqdm 的显示 —— #
+        pbar.set_postfix(train_loss=loss.item(), verify_loss=verify_loss.item())
+    return model, train_losses, verify_losses
+
+##----model training--------
+def batch_train(model,optimizer,
+        criterion,
+        num_epochs,
+        train_loader,
+        verify_loader,
+        accum_gradient=False,
+        accum_num=4
+    ):
+    train_losses = []
+    verify_losses = []
+    pbar = tqdm(range(int(num_epochs)), desc="Training", leave=True)
+    if accum_gradient:
+        for epoch in pbar:
+            model.train()
+            optimizer.zero_grad()
+            for step, (batch_X, batch_y) in enumerate(train_loader):
+                outputs = model(batch_X)
+                loss = criterion(outputs, batch_y)/accum_num
+                loss.backward()
+                if step % accum_num == 0:
+                    optimizer.step()
+                    optimizer.zero_grad()
+            train_losses.append(loss.item())
+            # —— 2. 验证 —— #
+            model.eval()
+            with torch.no_grad():
+                for batch_X, batch_y in verify_loader:
+                    verify_outputs = model(batch_X)
+                verify_loss = criterion(verify_outputs, batch_y)
+                verify_losses.append(verify_loss.item())
+            # —— 3. 更新 tqdm 的显示 —— #
+            pbar.set_postfix(train_loss=loss.item(), verify_loss=verify_loss.item())
+    else:
+        for epoch in pbar:
+            model.train()
+            for batch_X, batch_y in train_loader:
+                optimizer.zero_grad()
+                outputs = model(batch_X)
+                loss = criterion(outputs, batch_y)
+                loss.backward()
+                optimizer.step()
+            train_losses.append(loss.item())
+            # —— 2. 验证 —— #
+            model.eval()
+            with torch.no_grad():
+                for batch_X, batch_y in verify_loader:
+                    verify_outputs = model(batch_X)
+                verify_loss = criterion(verify_outputs, batch_y)
+                verify_losses.append(verify_loss.item())
+            # —— 3. 更新 tqdm 的显示 —— #
+            pbar.set_postfix(train_loss=loss.item(), verify_loss=verify_loss.item())
+    return model,train_losses,verify_losses
