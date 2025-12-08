@@ -13,6 +13,7 @@ import os
 import pandas as pd
 from tqdm.notebook import tqdm  # Import tqdm for progress bar
 from torch.nn.attention import sdpa_kernel, SDPBackend
+
 def set_seed(seed=42,deterministic = True, benchmark = False):
     torch.manual_seed(seed)             # CPU随机性
     torch.cuda.manual_seed(seed)        # GPU随机性（单卡）
@@ -324,7 +325,6 @@ class BertMHSelfAttention(nn.Module):
         self.head_dim = vec_dim // num_heads
         self.causal = causal            # BERT usually False
         self.pos_enc = SinusoidalPositionalEncoding(vec_dim)
-
         self.Wq  = nn.Linear(vec_dim, vec_dim, bias=bias)
         self.Wkv = nn.Linear(vec_dim, 2 * vec_dim, bias=bias)   # -> (K,V)
         self.out_proj = nn.Linear(vec_dim, vec_dim, bias=bias)
@@ -364,15 +364,25 @@ class BertMHSelfAttention(nn.Module):
         y = self.proj_dropout(y)
         return y
 
-
+        # match backend:
+        #     case "flash":
+        #         self.backend = SDPBackend.FLASH_ATTENTION
+        #     case "efficent":
+        #         self.backend = SDPBackend.EFFICIENT_ATTENTION
+        #     case "math":
+        #         self.backend = SDPBackend.MATH
 # ---
 class BIMHSAttention(nn.Module):
-    def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, causal=False, bias=True):
+    def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, backend = "math", causal=False, bias=True):
         super().__init__()
         assert vec_dim % num_heads == 0
         self.cls = nn.Parameter(torch.zeros(1, 1, vec_dim))
         nn.init.trunc_normal_(self.cls,std=0.02)
-        
+        self.backend = {
+            "flash": SDPBackend.FLASH_ATTENTION,
+            "efficient": SDPBackend.EFFICIENT_ATTENTION,
+            "math": SDPBackend.MATH,
+        }[backend]
         self.embed_dim = vec_dim
         self.num_heads = num_heads
         self.head_dim = vec_dim // num_heads
@@ -401,12 +411,16 @@ class BIMHSAttention(nn.Module):
 
         q, k, v = map(reshape_heads, (q, k, v)) # q:(B,H,1,D) k/v:(B,H,T,D)
 
-        # Note：PyTorch SDPA 的 bool mask == True
         attn_mask = None
-        if key_padding_mask is not None:        # key_padding_mask: (B,T) with True for PAD
-            attn_mask = key_padding_mask[:, None, None, :]   # (B,1,1,T)
+        if key_padding_mask is not None:
+            # key_padding_mask: (B, T) -> (B, T+1)
+            pad = torch.zeros(B, 1, dtype=torch.bool, device=key_padding_mask.device)
+            kpm = torch.cat([pad, key_padding_mask], dim=1)
+            attn_mask = kpm[:, None, None, :]     # (B,1,1,T+1)
+        
+        # Note：PyTorch SDPA 的 bool mask == True
 
-        with sdpa_kernel(SDPBackend.MATH):
+        with sdpa_kernel(self.backend):
             y = F.scaled_dot_product_attention(
                 q, k, v,
                 attn_mask=attn_mask,
