@@ -379,10 +379,10 @@ class BIMHSAttention(nn.Module):
         self.cls = nn.Parameter(torch.zeros(1, 1, vec_dim))
         nn.init.trunc_normal_(self.cls,std=0.02)
         self.backend = {
-            "flash": SDPBackend.FLASH_ATTENTION,
             "efficient": SDPBackend.EFFICIENT_ATTENTION,
             "math": SDPBackend.MATH,
         }[backend]
+        
         self.embed_dim = vec_dim
         self.num_heads = num_heads
         self.head_dim = vec_dim // num_heads
