@@ -1,0 +1,87 @@
+seedl = 42, seed = 42, r = 60, reg_wei = 0.0001, atthead = 4,    learning_rate = 3e-05, accuracy = 0.8130283280634961
+seedl = 42, seed = 42, r = 40, reg_wei = 0.001, atthead = 4,dropout = 0.001, learning_rate = 3e-05, accuracy = 0.7672775375879203
+seedl = 42, seed = 42, r = 32, reg_wei = 0.005, atthead = 4,dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8564883525843712
+seedl = 42, seed = 42, r = 44, reg_wei = 0.01, atthead = 4,dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8024456346389623
+seedl = 42, seed = 42, r = 44, reg_wei = 0.01, atthead = 4,dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8024456346389623
+seedl = 42, seed = 42, r = 40, reg_wei = 0.01, atthead = 4,win = 8, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.7435310060011615
+seedl = 42, seed = 42, r = 32, reg_wei = 0.005, atthead = 4, win = 8, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8634251790669162
+seedl = 42, seed = 42, r = 32, reg_wei = 0.005, atthead = 4, win = 8, dropout = 0.0, learning_rate = 3e-05, accuracy = 0.8638123507775699
+seedl = 42, seed = 42, r = 32, reg_wei = 0.005, atthead = 4, win = 8, dropout = 0.0, learning_rate = 3e-05, accuracy = 0.8638123507775699
+seedl = 42, seed = 42, r = 32, reg_wei = 0.005, atthead = 4, win = 8, dropout = 0.0, learning_rate = 3e-05, accuracy = 0.852745692714719
+seedl = 42, seed = 42, r = 32, reg_wei = 0.005, atthead = 4, win = 8, dropout = 0.0, learning_rate = 3e-05, accuracy = 0.8515196489643156
+seedl = 42, seed = 42, r = 32, reg_wei = 0.005, atthead = 4, win = 8, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8513583274182099
+seedl = 42, seed = 42, r = 32, reg_wei = 0.005, atthead = 4, win = 8, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8513583274182099
+seedl = 42, seed = 42, r = 32, reg_wei = 0.005, atthead = 4, win = 8, dropout = 0.0, learning_rate = 3e-05, accuracy = 0.8527134284054978
+seedl = 42, seed = 42, r = 32, reg_wei = 0.005, atthead = 4, win = 8, dropout = 0.0, learning_rate = 3e-05, accuracy = 0.8626185713363876
+seedl = 42, seed = 42, r = 32, reg_wei = 0.005, atthead = 4, win = 8, dropout = 0.0, learning_rate = 3e-05, accuracy = 0.8637478221591276
+seedl = 42, seed = 42, r = 32, reg_wei = 0.005, atthead = 4, win = 8, dropout = 0.0, learning_rate = 3e-05, accuracy = 0.863844615086791
+seedl = 42, seed = 42, r = 32, reg_wei = 0.005, atthead = 4, win = 8, dropout = 0.0, learning_rate = 3e-05, accuracy = 0.8639414080144544
+seedl = 42, seed = 42, r = 32, reg_wei = 0.005, atthead = 4, win = 8, dropout = 0.0, learning_rate = 3e-05, accuracy = 0.8628766858101568
+seedl = 42, seed = 42, r = 32, reg_wei = 0.005, atthead = 4, win = 8, dropout = 0.0, learning_rate = 3e-05, accuracy = 0.8642640511066658
+seedl = 42, seed = 42, r = 32, reg_wei = 0.02, atthead = 4, win = 8, dropout = 0.0, learning_rate = 3e-05, accuracy = 0.6258308059624443
+seedl = 42, seed = 42, r = 32, reg_wei = 0.02, atthead = 4, win = 8, dropout = 0.0, learning_rate = 3e-05, accuracy = 0.8405820481383494
+seedl = 42, seed = 42, r = 32, reg_wei = 0.02, atthead = 4, win = 8, dropout = 0.0, learning_rate = 3e-05, accuracy = 0.8624249854810608
+seedl = 42, seed = 42, r = 32, reg_wei = 0.02, atthead = 4, win = 8, dropout = 0.0, learning_rate = 3e-05, accuracy = 0.818997225269407
+seedl = 42, seed = 42, r = 32, reg_wei = 0.02, atthead = 2, win = 8, dropout = 0.01, learning_rate = 3e-05, accuracy = 0.693714912563722
+seedl = 42, seed = 42, r = 32, reg_wei = 0.02, atthead = 2, win = 8, dropout = 0.01, learning_rate = 3e-05, accuracy = 0.693714912563722
+seedl = 42, seed = 42, r = 32, reg_wei = 0.02, atthead = 2, win = 8, dropout = 0.01, learning_rate = 3e-05, accuracy = 0.693714912563722
+seedl = 42, seed = 42, r = 32, reg_wei = 0.02, atthead = 2, win = 8, dropout = 0.01, learning_rate = 3e-05, accuracy = 0.6942956701297025
+seedl = 42, seed = 42, r = 32,  atthead = 2, win = 8, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.6794863521971994
+seedl = 42, seed = 42, r = 36,  atthead = 2, win = 8, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.6970058721042782
+seedl = 42, seed = 42, r = 46,  atthead = 2, win = 8, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8534877718268052
+seedl = 42, seed = 42, r = 46,  atthead = 2, win = 5, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8375617491004452
+seedl = 42, seed = 42, r = 46,  atthead = 2, win = 15, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8800850936776891
+seedl = 42, seed = 42, r = 46,  atthead = 2, win = 15, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8732552063894902
+seedl = 42, seed = 42, r = 46,  atthead = 2, win = 15, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.875382548331716
+seedl = 42, seed = 42, r = 46,  atthead = 2, win = 15, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8765395237739793
+seedl = 42, seed = 42, r = 46,  atthead = 2, win = 16, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8961976025043903
+seedl = 42, seed = 42, r = 46,  atthead = 2, win = 16, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8961976025043903
+seedl = 42, seed = 42, r = 46,  atthead = 2, win = 16, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.876498434756051
+seedl = 42, seed = 42, r = 46,  atthead = 2, win = 12, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8684339371896203
+seedl = 42, seed = 42, r = 46,  atthead = 2, win = 12, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.866230677764566
+seedl = 42, seed = 42, r = 46,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.9042615785492141
+seedl = 42, seed = 42, r = 48,  atthead = 8, win = 20, dropout = 0.001, learning_rate = 1e-05, accuracy = 0.7309826006556275
+seedl = 42, seed = 42, r = 48,  atthead = 8, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.8057913759771371
+seedl = 42, seed = 42, r = 46,  atthead = 1, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9046398251660083
+seedl = 42, seed = 42, r = 46,  atthead = 1, win = 20, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8885853576531899
+seedl = 42, seed = 42, r = 44,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.777633016726906
+seedl = 42, seed = 42, r = 48,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.8497940657308565
+seedl = 42, seed = 42, r = 50,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.8978313860637135
+seedl = 42, seed = 42, r = 50,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9062788938387829
+seedl = 42, seed = 42, r = 50,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.8977893586618475
+seedl = 42, seed = 42, r = 50,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.9086324283432798
+seedl = 42, seed = 42, r = 46,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.6417584264940741
+seedl = 42, seed = 42, r = 20,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.6243170547196772
+seedl = 42, seed = 42, r = 20,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.9029167016895016
+seedl = 42, seed = 42, r = 22,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8771539043456333
+seedl = 42, seed = 42, r = 22,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 3e-05, accuracy = 0.8771539043456333
+seedl = 42, seed = 42, r = 22,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 5e-05, accuracy = 0.8981676052786417
+seedl = 42, seed = 42, r = 30,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 5e-05, accuracy = 0.8842145078591241
+seedl = 42, seed = 42, r = 30,  atthead = 2, win = 14, dropout = 0.0001, learning_rate = 5e-05, accuracy = 0.879243629991969
+seedl = 42, seed = 42, r = 30,  atthead = 2, win = 14, dropout = 0.0001, learning_rate = 3e-05, accuracy = 0.879243629991969
+seedl = 42, seed = 42, r = 26,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 5e-05, accuracy = 0.9017399344372531
+seedl = 42, seed = 44, r = 26,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 5e-05, accuracy = 0.8144490207615365
+seedl = 42, seed = 40, r = 26,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 5e-05, accuracy = 0.901403715222325
+seedl = 42, seed = 32, r = 26,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 5e-05, accuracy = 0.8831638228124737
+seedl = 42, seed = 36, r = 26,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 5e-05, accuracy = 0.8875767000084055
+seedl = 42, seed = 36, r = 26,  atthead = 2, win = 22, dropout = 0.0001, learning_rate = 5e-05, accuracy = 0.8728423475258918
+seedl = 42, seed = 38, r = 26,  atthead = 2, win = 22, dropout = 0.0001, learning_rate = 5e-05, accuracy = 0.8807648048154377
+seedl = 42, seed = 38, r = 18,  atthead = 2, win = 18, dropout = 0.0001, learning_rate = 5e-05, accuracy = 0.7923101544370649
+seedl = 42, seed = 42, r = 40,  atthead = 2, win = 18, dropout = 0.0001, learning_rate = 3e-05, accuracy = 0.7603824917980315
+seedl = 42, seed = 42, r = 38,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, accuracy = 0.7187105993107507
+seedl = 42, seed = 42, r = 24,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, accuracy = 0.9028746742876356
+seedl = 42, seed = 42, r = 24,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, loss = 0.26, accuracy = 0.9028746742876356
+seedl = 42, seed = 42, r = 18,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, loss = 0.53, accuracy = 0.807893
+seedl = 42, seed = 42, r = 24,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, loss = 0.44, accuracy = 0.759057
+seedl = 42, seed = 42, r = 20,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, loss = 0.33, accuracy = 0.888375
+seedl = 42, seed = 42, r = 26,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, loss = 0.29, accuracy = 0.897411
+seedl = 42, seed = 42, r = 26,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, loss = 0.30, accuracy = 0.895436
+seedl = 42, seed = 42, r = 26,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, loss = 0.32, accuracy = 0.878289
+seedl = 42, seed = 42, r = 24,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, loss = 0.33, accuracy = 0.888459
+seedl = 42, seed = 42, r = 26,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, loss = 0.32, accuracy = 0.877868
+seedl = 42, seed = 42, r = 24,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, loss = 0.33, accuracy = 0.888543
+seedl = 42, seed = 42, r = 24,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, loss = 0.44, accuracy = 0.840170
+seedl = 42, seed = 42, r = 24,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, loss = 0.44, accuracy = 0.841641
+seedl = 42, seed = 42, r = 24,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, loss = 0.52, accuracy = 0.710053
+seedl = 42, seed = 42, r = 24,  atthead = 2, win = 20, dropout = 0.0001, learning_rate = 3e-05, loss = 0.55, accuracy = 0.754812
+SA, seedl = 42, seed = 42, r = 24,  atthead = 2, win = 24, dropout = 0.0001, learning_rate = 3e-05, loss = 0.37, accuracy = 0.918201

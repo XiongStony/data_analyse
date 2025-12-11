@@ -84,3 +84,38 @@ def batch_train(model,optimizer,
             # —— 3. 更新 tqdm 的显示 —— #
             pbar.set_postfix(train_loss=loss.item(), verify_loss=verify_loss.item())
     return model,train_losses,verify_losses
+
+# batch_size = X_train_tensor.size(0)//divide
+# train_ds = TensorDataset(X_train_tensor, cls_y_train_tensor, reg_y_train_tensor)
+# train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, drop_last=True)
+
+# for epoch in pbar:
+#     model.train()
+#     for X_batch, cls_batch, reg_batch in train_loader:
+#         logits, depth = model(X_batch)      # 解包更清晰
+#         claloss = classif_cri(logits, cls_batch)              # 分类
+#         reloss  = regression_cri(depth, reg_batch) # 回归
+#         loss = cla_wei*claloss + reg_wei*reloss
+#         loss.backward()
+#     optimizer.step()
+#     optimizer.zero_grad()
+#     train_losses.append(loss.item())
+#     # —— 2. 验证 —— #
+#     model.eval()
+#     with torch.no_grad():
+#         verify_logits, verify_depth = model(X_ver_tensor)
+
+#         verify_claloss = classif_cri(verify_logits, cls_y_ver_tensor)
+#         verify_reloss  = regression_cri(verify_depth, reg_y_ver_tensor)
+#         cla = cla_wei*verify_claloss.item()
+#         reg = reg_wei*verify_reloss.item()
+#         add = cla + reg
+#         verify_losses.append([cla, reg, add])
+
+#     # —— 3. 更新 tqdm 的显示 —— #
+#     pbar.set_postfix(
+#         train_loss = loss.item(),
+#         class_loss = cla,
+#         rgs_loss   = reg,
+#         add_loss   = add
+#     )
