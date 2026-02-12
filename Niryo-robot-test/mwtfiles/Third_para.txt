@@ -1,0 +1,7 @@
+seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9967813190280845
+seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9962133165036289
+seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9962133165036289
+seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9962133165036289
+REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 3e-05, best_verify_loss = 1.4502971172332764
+seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9962133165036289
+REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, best_verify_loss = 0.3809538781642914

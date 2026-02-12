@@ -2,3 +2,8 @@ real-blood-meat-time:
   materials: {'V':'Vessel', 'T':'Tissue'}
   realmater: ["Silicone/Water","Silicone"]
   dir_path: "/home/yuqster/files/research/dataset"
+
+The_third_NeedleARM:
+  materials: {'V': Vessel, 'T':Tissue}
+  realmater: ["Silicone/Water","Silicone"]
+  dir_path: "/home/yuqster/files/research/dataset"

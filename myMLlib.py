@@ -32,7 +32,7 @@ def plt_confusion(cm, objects, fs=(8,6)):
     plt.title("Confusion Matrix")
     plt.show()
 
-def plt_loss(train_losses, test_losses=None, verifying_losses=None):
+def plt_loss(train_losses, test_losses=None, verifying_losses=None)->tuple[float,int]:
     plt.figure(figsize=(10, 5))
     if test_losses is not None:
         plt.plot(test_losses, label="Testing Loss")
@@ -41,9 +41,10 @@ def plt_loss(train_losses, test_losses=None, verifying_losses=None):
         
         # 找到 verifying_losses 最低点对应的索引
         best_epoch = int(np.argmin(verifying_losses))
+        best_verifying_loss = verifying_losses[best_epoch]
         # 在该索引处画一条竖直虚线
         plt.axvline(x=best_epoch, linestyle='--', color='gray',
-                    label=f"Best Verify @ epoch {best_epoch} at {verifying_losses[best_epoch]:.2f}")
+                    label=f"Best Verify @ epoch {best_epoch} at {best_verifying_loss:.2f}")
         
     plt.plot(train_losses, label="Training Loss")
     plt.xlabel("Epochs")
@@ -51,6 +52,7 @@ def plt_loss(train_losses, test_losses=None, verifying_losses=None):
     plt.title("Loss Over Epochs")
     plt.legend()
     plt.show()
+    return best_verifying_loss, best_epoch
 # feature extraction & reduced order modeling
 def multi_SA_memwise(Ulist, r=None, weights=None):
     Ucut = [U[:, : (r or min(U.shape[1] for U in Ulist))] for U in Ulist]
@@ -316,6 +318,8 @@ class MultiHeadSelfAttention(nn.Module):
         y = self.out_proj(y)
         y = self.proj_dropout(y)
         return y
+    
+# not really bert, the cls token need to be impelement out side of this model
 class BertMHSelfAttention(nn.Module):
     def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, causal=False, bias=True):
         super().__init__()
@@ -372,6 +376,8 @@ class BertMHSelfAttention(nn.Module):
         #     case "math":
         #         self.backend = SDPBackend.MATH
 # ---
+
+# build in Bert multiheader self attention
 class BIMHSAttention(nn.Module):
     def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, backend = "math", causal=False, bias=True):
         super().__init__()
@@ -398,7 +404,7 @@ class BIMHSAttention(nn.Module):
 
     def forward(self, x, key_padding_mask=None):
         B, _, C = x.shape
-        cls = self.cls.expand(B,1,C)
+        cls = self.cls.expand(B,1,C)        # cls token
         x = torch.cat((cls, x), dim=1)
         x = self.pos_enc(x)                     # (B, T, C)
         q = self.Wq(x[:, :1, :])                # (B, 1, C)
@@ -475,6 +481,7 @@ class TinyClassifier(nn.Module):
         # x = x.mean(dim=1)                  # simple pooling
         logits = self.classifier(x)               # (B, num_classes)
         return logits
+    
 class SinusoidalPositionalEncoding(nn.Module):
     """
     Classic Vaswani et al. (2017) sinusoidal encoding.
