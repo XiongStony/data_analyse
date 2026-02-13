@@ -5,3 +5,18 @@ seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning
 REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 3e-05, best_verify_loss = 1.4502971172332764
 seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9962133165036289
 REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, best_verify_loss = 0.3809538781642914
+seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9962133165036289
+REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, best_verify_loss = 0.3329726755619049
+seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9962133165036289
+seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9962133165036289
+REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, best_verify_loss = 0.318081259727478
+seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9962133165036289
+seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9962133165036289
+REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, best_verify_loss = 0.31032273173332214
+seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9962133165036289
+seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9962133165036289
+REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 20, dropout = 0.001, learning_rate = 2e-05, best_verify_loss = 0.3110024631023407
+seedl = 42, seed = 42, r = 32,  atthead = 2, win = 10, dropout = 0.001, learning_rate = 2e-05, accuracy = 0.9984378936759889
+REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 10, dropout = 0.001, learning_rate = 2e-05, best_verify_loss = 0.46324366331100464
+REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 10, dropout = 0.001, learning_rate = 2e-05, best_verify_loss = 0.4228985905647278
+REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 10, dropout = 0.001, learning_rate = 2e-05, best_verify_loss = 0.4226457476615906
