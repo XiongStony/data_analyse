@@ -66,11 +66,19 @@ def multi_SA_memwise(Ulist, r=None, weights=None):
     eigvals, eigvecs = np.linalg.eigh(C)
     idx = np.argsort(eigvals)[::-1][:Ustack.shape[2]]
     return eigvecs[:, idx]                          # U_shared
+
 def DEIM(Ur):
     n, r = Ur.shape            # Ur: (n, r)，列为基向量
     U = NumpyVectorSpace(n).from_numpy(Ur)
     dofs, _, _ = deim(U, modes=r, pod=False)
     return dofs                # 若需要选择矩阵：np.eye(n)[:, dofs]
+
+# reset regression part of the parameters
+
+def reset_regression_params(model):
+    for m in model.regression.modules():
+        if hasattr(m, "reset_parameters"):
+            m.reset_parameters()
 
 class CustomDataset(Dataset):
     def __init__(self, X, y):
@@ -81,7 +89,6 @@ class CustomDataset(Dataset):
     def __getitem__(self, idx):
         return self.X[idx], self.y[idx]
     
-
 
 class BalancedBatchSampler(Sampler):
     def __init__(self, labels, batch_size):
@@ -187,6 +194,7 @@ def load_data_list(folderpath, materials, N=None):
                 data_list[j].append(trans)
                 labels[j].append(i)
     return data_list, labels
+
 def load_to_alist(folderpath,materials, N = 3e5):
     N = int(N)
     data_list = []
@@ -202,6 +210,7 @@ def load_to_alist(folderpath,materials, N = 3e5):
             data_list.append(trans)
             labels.append(i)
     return data_list, labels
+
 def rebalance_weight(y):
     labels = torch.tensor(y,dtype=torch.long).squeeze()  # torch.Tensor, dtype=torch.long
     labels_range = len(np.unique(y))
@@ -212,8 +221,7 @@ def rebalance_weight(y):
     class_weights = class_weights / class_weights.sum() * labels_range
     return class_weights, labels_range
 
-def plotCWTscalogram(time,freqs,cwtmatr, frerange = None,figuresize = (10,6), Name ='CWT Scalogram',contourplot = False, cmapnum = 15):
-    plt.figure(figsize=figuresize)
+def plotCWTscalogram(time,freqs,cwtmatr, frerange = None, contourplot = False, cmapnum = 15):
     if frerange != None:
         inbeg = np.searchsorted(freqs, frerange[0])
         inend = np.searchsorted(freqs, frerange[1])
@@ -224,14 +232,13 @@ def plotCWTscalogram(time,freqs,cwtmatr, frerange = None,figuresize = (10,6), Na
         target = np.abs(cwtmatr)
         fretarget = freqs*1e-3
     if contourplot == True:
-        CS = plt.contourf(time, fretarget, target, levels=cmapnum, cmap='viridis')
+        CS = plt.contourf(time*1e6, fretarget, target, levels=cmapnum, cmap='viridis')
     else:
-        CS = plt.pcolormesh(time, fretarget, target, shading='auto')
+        CS = plt.pcolormesh(time*1e6, fretarget, target, shading='auto')
     plt.colorbar(CS)
-    plt.xlabel('Time [s]')
-    plt.ylabel('Frequency [kHz]')
-    plt.title(Name)
-    plt.show()
+    plt.xlabel('Time (micro s)')
+    plt.ylabel('Frequency (kHz)')
+
 def layer_activation(model, device, data, fclayer='fc1'):
     activations = {}
 
@@ -251,6 +258,7 @@ def layer_activation(model, device, data, fclayer='fc1'):
     handle.remove()
     output = activations[fclayer]
     return output
+
 def neuron_activation(model, device, data, fclayer='fc1', neuron_index=0):
     activations = {}
 
