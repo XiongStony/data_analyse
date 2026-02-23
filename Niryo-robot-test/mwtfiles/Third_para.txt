@@ -36,3 +36,6 @@ REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 10, dropout = 0.0
 REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 10, dropout = 0.0005, learning_rate = 0.0001, best_verify_loss = 0.48814377188682556
 REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 10, dropout = 0.001, learning_rate = 0.0001, best_verify_loss = 0.4212567210197449
 REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 10, dropout = 0.001, learning_rate = 0.0001, best_verify_loss = 0.42133858799934387
+REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 10, dropout = 0.001, learning_rate = 0.0001, best_verify_loss = 0.4222854971885681
+REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 10, dropout = 0.001, learning_rate = 0.0001, best_verify_loss = 0.42229440808296204
+REGRESSION: seedl = 42, seed = 42, r = 32,  atthead = 2, win = 10, dropout = 0.001, learning_rate = 0.0001, best_verify_loss = 0.42229440808296204
