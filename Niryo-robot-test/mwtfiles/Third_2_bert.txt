@@ -1,0 +1,17 @@
+seedl = 42, seed = 42, r = 32,  atthead = 2, win = 10, dropout = 0.001, learning_rate = 0.0001, accuracy = 0.9980347694633409
+seedl = 42, 
+ seed = 42, r = 32,  atthead = 2, win = 10, cls_dropout = 0.001, learning_rate = 0.0001, accuracy = 0.9976316452506929,
+ reg best loss = 0.24603594839572906, reg_dropout = 0.001, reg_weight = 0.15
+
+seedl = 42, 
+ seed = 42, r = 32,  atthead = 2, atten_dropout = 0.0001, win = 10, cls_dropout = 0.001, learning_rate = 0.0001, accuracy = 0.9977828168304359,
+ reg best loss = 0.1935349404811859, reg_dropout = 0.001, reg_weight = 0.4
+
+seedl = 42, 
+ seed = 42, r = 32,  atthead = 2, atten_dropout = 0.0001, win = 10, cls_dropout = 0.001, learning_rate = 0.0001, accuracy = 0.9981355505165029,
+ reg best loss = 0.17996656894683838, reg_dropout = 0.001, reg_weight = 0.4
+
+seedl = 42, 
+ seed = 42, r = 32,  atthead = 2, atten_dropout = 0.0001, win = 10, cls_dropout = 0.001, learning_rate = 0.0001, accuracy = 0.9981355505165029,
+ reg best loss = 0.17996656894683838, reg_dropout = 0.001, reg_weight = 0.4
+

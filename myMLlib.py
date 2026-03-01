@@ -211,6 +211,16 @@ def load_to_alist(folderpath,materials, N = 3e5):
             labels.append(i)
     return data_list, labels
 
+class WMSE(nn.Module):
+    def __init__(self, weights):
+        super().__init__()
+        self.mse = nn.MSELoss(reduction="none")
+        self.register_buffer('weights', weights)
+    def forward(self, predict, true_label):
+        loss = self.mse(predict, true_label)
+        adjusted = torch.sum(loss * self.weights)
+        return adjusted
+
 def rebalance_weight(y):
     labels = torch.tensor(y,dtype=torch.long).squeeze()  # torch.Tensor, dtype=torch.long
     labels_range = len(np.unique(y))
@@ -445,6 +455,56 @@ class BIMHSAttention(nn.Module):
 
         y = y.transpose(1, 2).contiguous().view(B, C)   # (B, C) not (B, 1, C)
         y = self.out_proj(y)                                 # (B, C)
+        y = self.proj_dropout(y)
+        return y
+
+# This is a model can be inserted a cls token for classification and a reg token for regression.
+
+class RegClsAttention(nn.Module):
+    def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, backend = "math", causal=False, bias=True):
+        super().__init__()
+        assert vec_dim % num_heads == 0
+        self.backend = {
+            "efficient": SDPBackend.EFFICIENT_ATTENTION,
+            "math": SDPBackend.MATH,
+        }[backend]
+        self.embed_dim = vec_dim
+        self.num_heads = num_heads
+        self.head_dim = vec_dim // num_heads
+        self.causal = causal            # BERT usually False
+        self.pos_enc = SinusoidalPositionalEncoding(vec_dim)
+        self.Wq  = nn.Linear(vec_dim, vec_dim, bias=bias)
+        self.Wkv = nn.Linear(vec_dim, 2 * vec_dim, bias=bias)   # -> (K,V)
+        self.out_proj = nn.Linear(vec_dim, vec_dim, bias=bias)
+
+        self.attn_dropout = float(attn_dropout)
+        self.proj_dropout = nn.Dropout(proj_dropout)
+
+    def forward(self, x):
+        B, T, C = x.shape
+        x = self.pos_enc(x)                     # (B, T, C)
+        q = self.Wq(x[:, :2, :])                # (B, 2, C)
+        kv = self.Wkv(x)                        # (B, T, 2C)
+        k, v = kv.chunk(2, dim=-1)              # (B, T, C), (B, T, C)
+
+        def reshape_heads(t):                   # -> (B, H, Tq_or_T, D)
+            t = t.contiguous()
+            return t.view(B, -1, self.num_heads, C // self.num_heads).transpose(1, 2)
+
+        q, k, v = map(reshape_heads, (q, k, v)) # q:(B,H,1,D) k/v:(B,H,T,D)
+
+        # Note：PyTorch SDPA 的 bool mask == True
+        with sdpa_kernel(self.backend):
+            y = F.scaled_dot_product_attention(
+                q, k, v,
+                attn_mask=None,
+                dropout_p=self.attn_dropout if self.training else 0.0,
+                is_causal=self.causal
+            )
+
+
+        y = y.transpose(1, 2).contiguous().view(B, -1, C)   #(B, 2, C)
+        y = self.out_proj(y)                                 # (B, 2, C)
         y = self.proj_dropout(y)
         return y
 # --- a tiny model that uses it ---
