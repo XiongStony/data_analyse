@@ -220,6 +220,17 @@ class WMSE(nn.Module):
         loss = self.mse(predict, true_label)
         adjusted = torch.sum(loss * self.weights)
         return adjusted
+    
+def get_optimizer_weight_decay_parameters(model, no_decay:list = ["bias", "LayerNorm.weight", "BatchNorm.weight"], weight_decay:float = 1e-2):
+    optimizer_grouped_parameters = [{
+            "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
+            "weight_decay": weight_decay,
+        },{
+            "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
+            "weight_decay": 0.0,
+        },
+    ]
+    return optimizer_grouped_parameters
 
 def rebalance_weight(y):
     labels = torch.tensor(y,dtype=torch.long).squeeze()  # torch.Tensor, dtype=torch.long
@@ -461,7 +472,7 @@ class BIMHSAttention(nn.Module):
 # This is a model can be inserted a cls token for classification and a reg token for regression.
 
 class RegClsAttention(nn.Module):
-    def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, backend = "math", causal=False, bias=True):
+    def __init__(self, vec_dim, num_heads, emb_length:int=2, attn_dropout=0.0, proj_dropout=0.0, backend = "math", causal=False, bias=True):
         super().__init__()
         assert vec_dim % num_heads == 0
         self.backend = {
@@ -476,14 +487,14 @@ class RegClsAttention(nn.Module):
         self.Wq  = nn.Linear(vec_dim, vec_dim, bias=bias)
         self.Wkv = nn.Linear(vec_dim, 2 * vec_dim, bias=bias)   # -> (K,V)
         self.out_proj = nn.Linear(vec_dim, vec_dim, bias=bias)
-
+        self.emb_length = emb_length
         self.attn_dropout = float(attn_dropout)
         self.proj_dropout = nn.Dropout(proj_dropout)
 
     def forward(self, x):
         B, T, C = x.shape
         x = self.pos_enc(x)                     # (B, T, C)
-        q = self.Wq(x[:, :2, :])                # (B, 2, C)
+        q = self.Wq(x[:, :self.emb_length, :])                # (B, 2, C)
         kv = self.Wkv(x)                        # (B, T, 2C)
         k, v = kv.chunk(2, dim=-1)              # (B, T, C), (B, T, C)
 
