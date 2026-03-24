@@ -136,6 +136,10 @@ def load_feather(folderpath, materials, N=None, rand = False):
                 data_list[j].append(trans)
                 labels[j].append(i)
     return data_list, labels
+# find the number of parameters in the model
+def count_parameters(model):
+    result = sum(p.numel() for p in model.parameters())
+    return result
 
 def get_num(files, descriptionp="", descriptionb=""):
     num = 0
@@ -146,6 +150,10 @@ def get_num(files, descriptionp="", descriptionb=""):
             num += 1
         else:
             return num
+        
+def get_R(regression_label, regression_predicts):
+    reg_y_te_np_mean = regression_label.mean()
+    return 1 - np.sum((regression_label-regression_predicts)**2)/np.sum((regression_label-reg_y_te_np_mean)**2)
 
 def load_feather_TS(folderpath, materials, loop_num_list):
     # 如果调用时没有传入 N，就根据 folderpath 的长度生成一个全是 3e5 的列表
@@ -305,14 +313,25 @@ def neuron_activation(model, device, data, fclayer='fc1', neuron_index=0):
     handle.remove()
     return neuron_activations
 
+# count parameters of model
+def count_parameters(model):
+    result = sum(p.numel() for p in model.parameters())
+    return result
 
 # ------Neural Networks--------
 
 # --- your attention block (unchanged) ---
 class MultiHeadSelfAttention(nn.Module):
-    def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, causal=False, bias=True):
+    def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, backend = "math", causal=False, bias=True):
         super().__init__()
         assert vec_dim % num_heads == 0
+        self.backend = {
+            "efficient": SDPBackend.EFFICIENT_ATTENTION,
+            "math": SDPBackend.MATH,
+            "flash": SDPBackend.FLASH_ATTENTION,
+            "cudnn": SDPBackend.CUDNN_ATTENTION,
+            "overrideable": SDPBackend.OVERRIDEABLE,
+        }[backend]
         self.embed_dim = vec_dim
         self.num_heads = num_heads
         self.head_dim = vec_dim // num_heads
@@ -336,12 +355,13 @@ class MultiHeadSelfAttention(nn.Module):
         attn_mask = None
         if key_padding_mask is not None:
             attn_mask = key_padding_mask[:, None, None, :]  # (B,1,1,T)
-        y = F.scaled_dot_product_attention(
-            q, k, v,
-            attn_mask=attn_mask,
-            dropout_p=0.0 if not self.training else self.attn_dropout,
-            is_causal=self.causal
-        )  # (B, H, T, D)
+        with sdpa_kernel(self.backend):
+            y = F.scaled_dot_product_attention(
+                q, k, v,
+                attn_mask=attn_mask,
+                dropout_p=0.0 if not self.training else self.attn_dropout,
+                is_causal=self.causal
+            )  # (B, H, T, D)
 
         y = y.transpose(1, 2).contiguous().view(B, T, C)  # (B, T, C)
         y = self.out_proj(y)
@@ -350,9 +370,16 @@ class MultiHeadSelfAttention(nn.Module):
     
 # not really bert, the cls token need to be impelement out side of this model
 class BertMHSelfAttention(nn.Module):
-    def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, causal=False, bias=True):
+    def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, backend="math", causal=False, bias=True):
         super().__init__()
         assert vec_dim % num_heads == 0
+        self.backend = {
+            "efficient": SDPBackend.EFFICIENT_ATTENTION,
+            "math": SDPBackend.MATH,
+            "flash": SDPBackend.FLASH_ATTENTION,
+            "cudnn": SDPBackend.CUDNN_ATTENTION,
+            "overrideable": SDPBackend.OVERRIDEABLE,
+        }[backend]
         self.embed_dim = vec_dim
         self.num_heads = num_heads
         self.head_dim = vec_dim // num_heads
@@ -383,7 +410,7 @@ class BertMHSelfAttention(nn.Module):
         if key_padding_mask is not None:        # key_padding_mask: (B,T) with True for PAD
             attn_mask = key_padding_mask[:, None, None, :]   # (B,1,1,T)
 
-        with sdpa_kernel(SDPBackend.MATH):
+        with sdpa_kernel(self.backend):
             y = F.scaled_dot_product_attention(
                 q, k, v,
                 attn_mask=attn_mask,
@@ -472,12 +499,15 @@ class BIMHSAttention(nn.Module):
 # This is a model can be inserted a cls token for classification and a reg token for regression.
 
 class RegClsAttention(nn.Module):
-    def __init__(self, vec_dim, num_heads, emb_length:int=2, attn_dropout=0.0, proj_dropout=0.0, backend = "math", causal=False, bias=True):
+    def __init__(self, vec_dim, num_heads, emb_length:int=2, emb_reverse=False, attn_dropout=0.0, proj_dropout=0.0, backend = "math", causal=False, bias=True):
         super().__init__()
         assert vec_dim % num_heads == 0
         self.backend = {
             "efficient": SDPBackend.EFFICIENT_ATTENTION,
             "math": SDPBackend.MATH,
+            "flash": SDPBackend.FLASH_ATTENTION,
+            "cudnn": SDPBackend.CUDNN_ATTENTION,
+            "overrideable": SDPBackend.OVERRIDEABLE,
         }[backend]
         self.embed_dim = vec_dim
         self.num_heads = num_heads
@@ -488,13 +518,14 @@ class RegClsAttention(nn.Module):
         self.Wkv = nn.Linear(vec_dim, 2 * vec_dim, bias=bias)   # -> (K,V)
         self.out_proj = nn.Linear(vec_dim, vec_dim, bias=bias)
         self.emb_length = emb_length
+        self.emb_reverse = emb_reverse
         self.attn_dropout = float(attn_dropout)
         self.proj_dropout = nn.Dropout(proj_dropout)
 
     def forward(self, x):
         B, T, C = x.shape
         x = self.pos_enc(x)                     # (B, T, C)
-        q = self.Wq(x[:, :self.emb_length, :])                # (B, 2, C)
+        q = self.Wq(x[:,-self.emb_length:,:]if self.emb_reverse else x[:, :self.emb_length, :])               # (B, 2, C)
         kv = self.Wkv(x)                        # (B, T, 2C)
         k, v = kv.chunk(2, dim=-1)              # (B, T, C), (B, T, C)
 
@@ -518,6 +549,112 @@ class RegClsAttention(nn.Module):
         y = self.out_proj(y)                                 # (B, 2, C)
         y = self.proj_dropout(y)
         return y
+    
+class WqAttention(nn.Module):
+    def __init__(self, vec_dim, num_heads, emb_length=2,
+                 attn_dropout=0.0, proj_dropout=0.0,
+                 backend="math", causal=False, bias=True):
+        super().__init__()
+        assert vec_dim % num_heads == 0
+        self.backend = {
+            "efficient": SDPBackend.EFFICIENT_ATTENTION,
+            "math":      SDPBackend.MATH,
+            "flash":     SDPBackend.FLASH_ATTENTION,
+            "cudnn":     SDPBackend.CUDNN_ATTENTION,
+            "overrideable": SDPBackend.OVERRIDEABLE,
+        }[backend]
+        self.num_heads  = num_heads
+        self.head_dim   = vec_dim // num_heads
+        self.emb_length = emb_length
+        self.causal     = causal
+        self.attn_dropout = float(attn_dropout)
+
+        self.pos_enc  = SinusoidalPositionalEncoding(vec_dim)
+        # K/V 对整个序列：一个融合线性层出 K 和 V
+        self.Wkv      = nn.Linear(vec_dim, 2 * vec_dim, bias=bias)
+        # Q 只对最后一个 token
+        self.Wq       = nn.Linear(vec_dim, emb_length * vec_dim, bias=bias)
+        self.out_proj = nn.Linear(vec_dim, vec_dim, bias=bias)
+        self.proj_dropout = nn.Dropout(proj_dropout)
+
+    def forward(self, x):
+        B, T, C = x.shape
+        H, D, L = self.num_heads, self.head_dim, self.emb_length
+
+        x = self.pos_enc(x)
+
+        # --- Q: 只取最后一个 token，直接 reshape 到多头 ---
+        q = self.Wq(x[:, -1, :]).view(B, L, H, D).transpose(1, 2)   # (B,H,L,D)
+
+        # --- K/V: 融合投影 + 一次 reshape + chunk ---
+        kv = self.Wkv(x).view(B, T, 2, H, D)                        # (B,T,2,H,D)
+        kv = kv.permute(2, 0, 3, 1, 4)                               # (2,B,H,T,D)
+        k, v = kv.unbind(0)                                           # (B,H,T,D) each
+
+        with sdpa_kernel(self.backend):
+            y = F.scaled_dot_product_attention(
+                q, k, v,
+                attn_mask=None,
+                dropout_p=self.attn_dropout if self.training else 0.0,
+                is_causal=self.causal
+            )                                                         # (B,H,L,D)
+
+        y = y.transpose(1, 2).reshape(B, L, C)                       # (B,L,C)
+        y = self.proj_dropout(self.out_proj(y))
+        return y
+    
+# Cross attention using Reg Cls token
+class RC_CrossAttention(nn.Module):
+    def __init__(self, vec_dim, num_heads, emb_length:int=2, attn_dropout=0.0, proj_dropout=0.0, backend = "math", causal=False, bias=True):
+        super().__init__()
+        assert vec_dim % num_heads == 0
+        self.backend = {
+            "efficient": SDPBackend.EFFICIENT_ATTENTION,
+            "math": SDPBackend.MATH,
+            "flash": SDPBackend.FLASH_ATTENTION,
+            "cudnn": SDPBackend.CUDNN_ATTENTION,
+            "overrideable": SDPBackend.OVERRIDEABLE,
+        }[backend]
+        self.embed_dim = vec_dim
+        self.num_heads = num_heads
+        self.head_dim = vec_dim // num_heads
+        self.causal = causal            # BERT usually False
+        self.pos_enc = SinusoidalPositionalEncoding(vec_dim)
+        self.Wq  = nn.Linear(vec_dim, vec_dim, bias=bias)
+        self.Wkv = nn.Linear(vec_dim, 2 * vec_dim, bias=bias)   # -> (K,V)
+        self.out_proj = nn.Linear(vec_dim, vec_dim, bias=bias)
+        self.emb_length = emb_length
+        self.attn_dropout = float(attn_dropout)
+        self.proj_dropout = nn.Dropout(proj_dropout)
+
+    def forward(self, x):
+        B, T, C = x.shape
+        x = self.pos_enc(x[:,self.emb_length:,:])                     # (B, T, C)
+        q = self.Wq(x[:, :self.emb_length, :])                # (B, 2, C)
+        kv = self.Wkv(x[:,self.emb_length:,:])                        # (B, T, 2C)
+        k, v = kv.chunk(2, dim=-1)              # (B, T, C), (B, T, C)
+
+        def reshape_heads(t):                   # -> (B, H, Tq_or_T, D)
+            t = t.contiguous()
+            return t.view(B, -1, self.num_heads, C // self.num_heads).transpose(1, 2)
+
+        q, k, v = map(reshape_heads, (q, k, v)) # q:(B,H,1,D) k/v:(B,H,T,D)
+
+        # Note：PyTorch SDPA 的 bool mask == True
+        with sdpa_kernel(self.backend):
+            y = F.scaled_dot_product_attention(
+                q, k, v,
+                attn_mask=None,
+                dropout_p=self.attn_dropout if self.training else 0.0,
+                is_causal=self.causal
+            )
+
+
+        y = y.transpose(1, 2).contiguous().view(B, -1, C)   #(B, 2, C)
+        y = self.out_proj(y)                                 # (B, 2, C)
+        y = self.proj_dropout(y)
+        return y
+
 # --- a tiny model that uses it ---
 # def __init__(self, neural_num_list, actfunc:str = 'GELU', p_drop=0.0, *args, **kwargs):
 #     super().__init__(*args, **kwargs)
