@@ -1,0 +1,3 @@
+auto_training_fixdata:
+  project_name: "auto_training_fixdata"
+  fixed_win: 15

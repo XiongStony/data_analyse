@@ -32,10 +32,10 @@ class RegClassifier(nn.Module):
         nn.init.trunc_normal_(self.rcx, std=0.02)
         self.ln = nn.LayerNorm(vec_dim)
         self.classifier = nn.Sequential(
-            nn.Linear(vec_dim,14),
+            nn.Linear(vec_dim,16),
             nn.GELU(),
             nn.Dropout(cls_dropout),
-            nn.Linear(14,num_classes)
+            nn.Linear(16,num_classes)
         )
         self.regression = RegModule(in_dim=vec_dim + num_classes, arms=24, necks=36, dropout=reg_dropout)
 
@@ -58,10 +58,10 @@ class Traditional(nn.Module):
         self.attn = MultiHeadSelfAttention(vec_dim, num_heads, attn_dropout=attn_dropout, proj_dropout=0)
         self.ln = nn.LayerNorm(vec_dim)
         self.classifier = nn.Sequential(
-            nn.Linear(vec_dim,14),
+            nn.Linear(vec_dim,16),
             nn.GELU(),
             nn.Dropout(cls_dropout),
-            nn.Linear(14,num_classes)
+            nn.Linear(16,num_classes)
         )
         self.regression = RegModule(in_dim=vec_dim + num_classes, arms=24, necks=36, dropout=reg_dropout)
 
@@ -83,10 +83,10 @@ class CrossAtten(nn.Module):
         nn.init.trunc_normal_(self.rcx, std=0.02)
         self.ln = nn.LayerNorm(vec_dim)
         self.classifier = nn.Sequential(
-            nn.Linear(vec_dim,14),
+            nn.Linear(vec_dim,16),
             nn.GELU(),
             nn.Dropout(cls_dropout),
-            nn.Linear(14,num_classes)
+            nn.Linear(16,num_classes)
         )
         self.regression = RegModule(in_dim=vec_dim + num_classes, arms=24, necks=36, dropout=reg_dropout)
 
@@ -110,10 +110,10 @@ class W2qLastToken(nn.Module):
         self.pre_ln = nn.LayerNorm(vec_dim)
         self.post_ln = nn.LayerNorm(vec_dim)
         self.classifier = nn.Sequential(
-            nn.Linear(vec_dim,14),
+            nn.Linear(vec_dim,16),
             nn.GELU(),
             nn.Dropout(cls_dropout),
-            nn.Linear(14,num_classes)
+            nn.Linear(16,num_classes)
         )
         self.regression = RegModule(in_dim=vec_dim + num_classes, arms=24, necks=36, dropout=reg_dropout)
 
@@ -133,10 +133,10 @@ class LastToken(nn.Module):
         self.attn = WqAttention(vec_dim, num_heads, emb_length=1, attn_dropout=attn_dropout,proj_dropout=0)
         self.ln = nn.LayerNorm(vec_dim)
         self.classifier = nn.Sequential(
-            nn.Linear(vec_dim,14),
+            nn.Linear(vec_dim,16),
             nn.GELU(),
             nn.Dropout(cls_dropout),
-            nn.Linear(14,num_classes)
+            nn.Linear(16,num_classes)
         )
         self.regression = RegModule(in_dim=vec_dim + num_classes, arms=24, necks=36, dropout=reg_dropout)
 
