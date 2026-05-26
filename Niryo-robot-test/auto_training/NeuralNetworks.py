@@ -24,6 +24,24 @@ class RegModule(nn.Module):
         x    = self.regression4(x)
         return x
     
+class RegModule2(nn.Module):
+    def __init__(self, in_dim:int, arms:int, necks:int,dropout=1e-3):
+        super().__init__()
+        self.actfun = nn.GELU()
+        self.reg_dropout = nn.Dropout(dropout)
+        self.regression1 = nn.Linear(in_dim,arms)
+        self.regression2 = nn.Linear(arms,necks)
+        self.regression3 = nn.Linear(necks,1)
+
+    def forward(self,x):
+        x    = self.regression1(x)
+        x    = self.actfun(x)
+        x = self.regression2(x)
+        x = self.actfun(x)            # residual layer
+        x    = self.reg_dropout(x)
+        x    = self.regression3(x)
+        return x
+    
 class RegClassifier(nn.Module):
     def __init__(self, vec_dim=64, num_heads=4, num_classes=2, attn_dropout=0.001, cls_dropout = 0.001,reg_dropout=0.001):
         super().__init__()
@@ -102,11 +120,12 @@ class CrossAtten(nn.Module):
         added = torch.cat((logits.detach(),x[:,1,:]),dim=1)
         depth = self.regression(added).squeeze(-1)
         return logits, depth
-
+    
+# self.regression = RegModule(in_dim=vec_dim + num_classes, arms=24, necks=36, dropout=reg_dropout)
 class W2qLastToken(nn.Module):
     def __init__(self, vec_dim=64, num_heads=4, num_classes=2, attn_dropout=0.001, cls_dropout = 0.001,reg_dropout=0.001):
         super().__init__()
-        self.attn = WqAttention(vec_dim, num_heads, emb_length=2, attn_dropout=attn_dropout,proj_dropout=0)
+        self.attn = WqAttention(vec_dim, num_heads, emb_length=2, attn_dropout=attn_dropout,proj_dropout=0.1)
         self.pre_ln = nn.LayerNorm(vec_dim)
         self.post_ln = nn.LayerNorm(vec_dim)
         self.classifier = nn.Sequential(
@@ -130,7 +149,7 @@ class W2qLastToken(nn.Module):
 class LastToken(nn.Module):
     def __init__(self, vec_dim=64, num_heads=4, num_classes=1, attn_dropout=0.001, cls_dropout = 0.001,reg_dropout=0.001):
         super().__init__()
-        self.attn = WqAttention(vec_dim, num_heads, emb_length=1, attn_dropout=attn_dropout,proj_dropout=0)
+        self.attn = WqAttention(vec_dim, num_heads, emb_length=1, attn_dropout=attn_dropout,proj_dropout=0.1)
         self.ln = nn.LayerNorm(vec_dim)
         self.classifier = nn.Sequential(
             nn.Linear(vec_dim,16),

@@ -22,7 +22,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", type=str, default="No")
     parser.add_argument("--figures",type=bool, default=False)
-    parser.add_argument("--epoch", type=int, default=10000)
+    parser.add_argument("--epoch", type=int, default=20000)
     args = parser.parse_args()
 
     with open('../hyperparameters.yml', 'r') as file:
@@ -32,8 +32,9 @@ if __name__ == "__main__":
     realmater = parameters["realmater"]
     dir_path = parameters["dir_path"]
     materials = list(materials.values())
-    print(materials)
-    print(realmater)
+    with open("parameters.yml",'r') as file:
+        all_parameters = yaml.safe_load(file)
+        NN_parameters = all_parameters["W2qLastTokenNN"]
 
     plt.rcParams.update({
         'font.size': 14,
@@ -50,7 +51,7 @@ if __name__ == "__main__":
     print(time_vec.shape)
 
     # Load Data
-    seed = 46
+    seed = 43
     set_seed(seed)
     two_label_depth = []
     folderpath = [os.path.join(dir_path,x) for x in ("realtest_mwt9","realtest_mwt10")]
@@ -98,10 +99,6 @@ if __name__ == "__main__":
 
     idx = {"train":list(range(0,400)) + list(range(600,1000)), "test":list(range(400,600)) + list(range(1000,1200))}
     mater_idx = {"V":list(range(400)) + list(range(800,1200)), "T":list(range(400, 800)) + list(range(1200,1600))}
-    print(idx["train"])
-    print(idx["test"])
-    print(mater_idx["V"])
-    print(mater_idx["T"])
 
 
 
@@ -132,6 +129,9 @@ if __name__ == "__main__":
     signalT = np.concatenate([datalist[i] for i in mater_idx["T"]],axis=0).mean(axis=0)
     snapshot = np.concatenate(datalist,axis=0).squeeze()[:,:2500]
     snapshot_r = np.concatenate(data_test,axis=0).squeeze()[:,:2500]
+    # centrolize_scal = StandardScaler(with_mean=True, with_std=False)
+    # snapshot = centrolize_scal.fit_transform(snapshot)
+    # snapshot_r = centrolize_scal.transform(snapshot_r)
     print(snapshot.shape)
     print(snapshot_r.shape)
     print(len(depthlist))
@@ -259,23 +259,26 @@ if __name__ == "__main__":
     print(X_te_tensor.shape)
     print(reg_y_te_tensor.shape)
 
-    numhead = 2
-    atten_dropout = 0.1
-    cls_dropout = 0.1
-    reg_dropout = 0.1
-    weight_decay = 0.0
-    pre_training_learning_rate = 1e-3
+    numhead = NN_parameters["numhead"]
+    atten_dropout = NN_parameters["atten_dropout"]
+    cls_dropout = NN_parameters["cls_dropout"]
+    reg_dropout = NN_parameters["reg_dropout"]
+    weight_decay = NN_parameters["weight_decay"]
+    pre_training_learning_rate = NN_parameters["learning_rate"]
     classif_cri = nn.CrossEntropyLoss() #weight=class_weights.to(device)
 
-    train_depth_weight = find_weight(reg_y_train_tensor.int(), 3)
-    w_reg = 0.6
+    # train_depth_weight = find_weight(reg_y_train_tensor.int(), 3)
+    w_reg = NN_parameters["w_reg"]
     w_cls = 1-w_reg
-    print(train_depth_weight.shape)
+    # print(train_depth_weight.shape)
     print(X_train_tensor.shape)
-    reg_train_criterion = WMSE(train_depth_weight)
+    # reg_train_criterion = WMSE(train_depth_weight)
+    reg_train_criterion = nn.MSELoss()
     reg_ver_criterion = nn.MSELoss()
     set_seed(seed)
-    model = LastToken(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+
+    ## ======Model =========
+    model = W2qLastToken(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
 
     optimizer = optim.Adam(model.parameters(), weight_decay=weight_decay, lr=pre_training_learning_rate)
     num_epochs = args.epoch
@@ -285,7 +288,8 @@ if __name__ == "__main__":
         train_losses = []
         verify_cls_losses = []
         verify_reg_losses = []
-        best_reg_loss = float('inf')
+        best_epoch = 0
+        best_loss = float('inf')
         pbar = tqdm(range(int(num_epochs)), desc="Training", leave=True)
 
         for epoch in pbar:
@@ -308,8 +312,12 @@ if __name__ == "__main__":
                 verify_cls_losses.append(cls_item)
                 reg_item = ver_reg_loss.item()
                 verify_reg_losses.append(reg_item)
-            if reg_item < best_reg_loss and epoch > 4000:
-                best_reg_loss = reg_item
+                l = reg_item + 10 * cls_item
+            if l < best_loss and epoch > 4000:
+                best_loss = l
+                best_epoch = epoch
+                b_reg_loss = reg_item
+                b_cls_loss = cls_item
                 best_state = deepcopy(model.state_dict())
             # —— 3. 更新 tqdm 的显示 —— #
             pbar.set_postfix(
@@ -331,7 +339,7 @@ if __name__ == "__main__":
             k += 1
         wins_folder = os.path.join(figure_path,f"{model.__class__.__name__}_{k}_wins")
         os.makedirs(wins_folder,exist_ok=True)
-        torch.save(model.state_dict(),os.path.join("models",f"{model.__class__.__name__}_att{k}win{win}.pt"))
+        torch.save(model.state_dict(),os.path.join(wins_folder,f"{model.__class__.__name__}_att{k}win{win}.pt"))
 
         model.eval()
         with torch.no_grad():
@@ -419,6 +427,8 @@ if __name__ == "__main__":
                             label=f"Best Verify cls @ epoch {cls_min_idx} at {best_cls_loss:.2f}")
         ax.axvline(x=reg_min_idx, linestyle='--', color='pink',
                             label=f"Best Verify reg @ epoch {reg_min_idx} at {best_reg_loss:.2f}")
+        ax.axvline(x=best_epoch, linestyle='--', color='blue',
+                            label=f"epoch {best_epoch} at reg {b_reg_loss:.3f} cls {b_cls_loss:.3f}")
         ax.legend()
         plt.savefig(os.path.join(wins_folder, f"win{win}.pdf"), format="pdf", bbox_inches="tight")
 
@@ -427,10 +437,11 @@ if __name__ == "__main__":
 
         text = f" \n {model.__class__.__name__}, att{k} , seed = {seed}, r = {r},  atthead = {numhead}, atten_dropout = {atten_dropout}, \n \
         win = {win}, cls_dropout = {cls_dropout}, learning_rate = {pre_training_learning_rate}, \n \
-        cls wrong prediction = {cls_wrong_predicts}, Train Loss = {loss.item()}, reg best loss = {best_reg_loss},R = {R}, \n \
-            reg_dropout = {cls_dropout}, reg_weight = {w_reg}, mode parameters = {para}\n\n"
-        
-        with open("standard_att.txt","a") as f:
+        cls wrong prediction = {cls_wrong_predicts}, Train Loss = {loss.item()}, reg best loss = {best_reg_loss}, cls best loss = {best_cls_loss}, R = {R}, \n \
+            reg_dropout = {reg_dropout}, reg_weight = {w_reg}, mode parameters = {para}\n \
+        best loss = {best_loss} b reg = {b_reg_loss}  b cls = {b_cls_loss}\n"
+        record_path = os.path.join(wins_folder,"standard_att.txt")
+        with open(record_path,"a") as f:
             f.write(text)
 
         best_reg_losses["epoch"].append(reg_min_idx)

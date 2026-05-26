@@ -1,0 +1,6 @@
+ 
+ LastToken, att3 , seed = 46, r = 32,  atthead = 2, atten_dropout = 0.1, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 44, Train Loss = 0.04957549646496773, reg best loss = 0.18232104182243347,R = 0.8678413033485413, 
+             reg_dropout = 0.1, reg_weight = 0.8, mode parameters = 7503
+
