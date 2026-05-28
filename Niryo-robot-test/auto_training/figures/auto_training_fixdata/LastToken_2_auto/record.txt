@@ -1,0 +1,112 @@
+ 
+ LastToken, att2 , seed = 43, r = 32,  atthead = 2, atten_dropout = 0.2, 
+         win = 2, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 9, Train Loss = 0.12101580947637558, reg best loss = 0.2574826776981354, cls best loss = 0.0006550856633111835, R = 0.7752482891082764, 
+             reg_dropout = 0.1, reg_weight = 0.95, mode parameters = 7503
+         best loss = 0.27014252822846174  b reg = 0.25875890254974365  b cls = 0.001138362567871809
+ 
+ 
+ 
+ LastToken, att2 , seed = 43, r = 32,  atthead = 2, atten_dropout = 0.2, 
+         win = 3, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 0, Train Loss = 0.11266904324293137, reg best loss = 0.2372865229845047, cls best loss = 8.901733963284642e-05, R = 0.791214108467102, 
+             reg_dropout = 0.1, reg_weight = 0.95, mode parameters = 7503
+         best loss = 0.2394391140260268  b reg = 0.2372865229845047  b cls = 0.00021525910415221006
+ 
+ 
+ 
+ LastToken, att2 , seed = 43, r = 32,  atthead = 2, atten_dropout = 0.2, 
+         win = 4, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 1, Train Loss = 0.10796891152858734, reg best loss = 0.23200471699237823, cls best loss = 0.0001741515879984945, R = 0.7931032180786133, 
+             reg_dropout = 0.1, reg_weight = 0.95, mode parameters = 7503
+         best loss = 0.23955792214837857  b reg = 0.23722197115421295  b cls = 0.00023359509941656142
+ 
+ 
+ 
+ LastToken, att2 , seed = 43, r = 32,  atthead = 2, atten_dropout = 0.2, 
+         win = 5, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 4, Train Loss = 0.10555284470319748, reg best loss = 0.22380989789962769, cls best loss = 0.0006808104808442295, R = 0.803144633769989, 
+             reg_dropout = 0.1, reg_weight = 0.95, mode parameters = 7503
+         best loss = 0.23164873418863863  b reg = 0.22432841360569  b cls = 0.0007320320582948625
+ 
+ 
+ 
+ LastToken, att2 , seed = 43, r = 32,  atthead = 2, atten_dropout = 0.2, 
+         win = 6, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 1, Train Loss = 0.09930327534675598, reg best loss = 0.21086865663528442, cls best loss = 0.00013814056001137942, R = 0.8159867525100708, 
+             reg_dropout = 0.1, reg_weight = 0.95, mode parameters = 7503
+         best loss = 0.2137990893679671  b reg = 0.21125684678554535  b cls = 0.000254224258242175
+ 
+ 
+ 
+ LastToken, att2 , seed = 43, r = 32,  atthead = 2, atten_dropout = 0.2, 
+         win = 7, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 0, Train Loss = 0.09677091985940933, reg best loss = 0.21553614735603333, cls best loss = 9.770693577593192e-05, R = 0.8089984655380249, 
+             reg_dropout = 0.1, reg_weight = 0.95, mode parameters = 7503
+         best loss = 0.2227746080898214  b reg = 0.22067788243293762  b cls = 0.0002096725656883791
+ 
+ 
+ 
+ LastToken, att2 , seed = 43, r = 32,  atthead = 2, atten_dropout = 0.2, 
+         win = 8, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 0, Train Loss = 0.08852305263280869, reg best loss = 0.19491103291511536, cls best loss = 4.019378684461117e-05, R = 0.8301666378974915, 
+             reg_dropout = 0.1, reg_weight = 0.95, mode parameters = 7503
+         best loss = 0.1971960347436834  b reg = 0.19530881941318512  b cls = 0.0001887215330498293
+ 
+ 
+ 
+ LastToken, att2 , seed = 43, r = 32,  atthead = 2, atten_dropout = 0.2, 
+         win = 9, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 0, Train Loss = 0.08214490860700607, reg best loss = 0.17978700995445251, cls best loss = 4.842209455091506e-05, R = 0.8383393287658691, 
+             reg_dropout = 0.1, reg_weight = 0.95, mode parameters = 7503
+         best loss = 0.183015582493681  b reg = 0.18247662484645844  b cls = 5.389576472225599e-05
+ 
+ 
+ 
+ LastToken, att2 , seed = 43, r = 32,  atthead = 2, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 0, Train Loss = 0.06291165947914124, reg best loss = 0.19057486951351166, cls best loss = 3.889931758749299e-05, R = 0.8342413902282715, 
+             reg_dropout = 0.1, reg_weight = 0.95, mode parameters = 7503
+         best loss = 0.19319177549914457  b reg = 0.19105684757232666  b cls = 0.0002134927926817909
+ 
+ 
+ 
+ LastToken, att2 , seed = 43, r = 32,  atthead = 2, atten_dropout = 0.2, 
+         win = 11, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 14, Train Loss = 0.05466187745332718, reg best loss = 0.15578484535217285, cls best loss = 0.0023259827867150307, R = 0.858801007270813, 
+             reg_dropout = 0.1, reg_weight = 0.95, mode parameters = 7503
+         best loss = 0.19146676314994693  b reg = 0.16165053844451904  b cls = 0.0029816224705427885
+ 
+ 
+ 
+ LastToken, att2 , seed = 43, r = 32,  atthead = 2, atten_dropout = 0.2, 
+         win = 12, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 6, Train Loss = 0.05317603796720505, reg best loss = 0.172084778547287, cls best loss = 0.0008899704553186893, R = 0.8484231233596802, 
+             reg_dropout = 0.1, reg_weight = 0.95, mode parameters = 7503
+         best loss = 0.18495312542654574  b reg = 0.17541684210300446  b cls = 0.0009536283323541284
+ 
+ 
+ 
+ LastToken, att2 , seed = 43, r = 32,  atthead = 2, atten_dropout = 0.2, 
+         win = 13, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 5, Train Loss = 0.049348313361406326, reg best loss = 0.15963490307331085, cls best loss = 0.0011698061134666204, R = 0.8589649200439453, 
+             reg_dropout = 0.1, reg_weight = 0.95, mode parameters = 7503
+         best loss = 0.19930304773151875  b reg = 0.16359594464302063  b cls = 0.0035707103088498116
+ 
+ 
+ 
+ LastToken, att2 , seed = 43, r = 32,  atthead = 2, atten_dropout = 0.2, 
+         win = 14, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 2, Train Loss = 0.048797622323036194, reg best loss = 0.17968007922172546, cls best loss = 7.333513349294662e-05, R = 0.842944324016571, 
+             reg_dropout = 0.1, reg_weight = 0.95, mode parameters = 7503
+         best loss = 0.1866258272784762  b reg = 0.1852407157421112  b cls = 0.00013851115363650024
+ 
+ 
+ 
+ LastToken, att2 , seed = 43, r = 32,  atthead = 2, atten_dropout = 0.2, 
+         win = 15, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 3, Train Loss = 0.04635394737124443, reg best loss = 0.16038091480731964, cls best loss = 0.0014075004728510976, R = 0.8411739468574524, 
+             reg_dropout = 0.1, reg_weight = 0.95, mode parameters = 7503
+         best loss = 0.1981575528625399  b reg = 0.18254438042640686  b cls = 0.0015613172436133027
+ 
+ 
