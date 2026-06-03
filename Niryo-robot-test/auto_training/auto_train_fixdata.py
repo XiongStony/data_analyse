@@ -61,7 +61,7 @@ if __name__ == "__main__":
     print(time_vec.shape)
 
     # Load Data
-    seed = 43
+    seed = 42
     set_seed(seed)
     two_label_depth = []
     folderpath = [os.path.join(dir_path,x) for x in ("realtest_mwt9","realtest_mwt10")]
