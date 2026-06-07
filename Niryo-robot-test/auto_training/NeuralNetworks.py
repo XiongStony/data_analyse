@@ -1,5 +1,5 @@
 from torch import  nn
-from myMLlib import  RegClsAttention, MultiHeadSelfAttention, RC_CrossAttention, WqAttention
+from myMLlib import  RegClsAttention, MultiHeadSelfAttention, RC_CrossAttention, WqAttention, MutiTaskCAttention
 import torch
 
 
@@ -139,13 +139,13 @@ class W2qLastToken(nn.Module):
     def forward(self,x):  # token_ids: (B, T)
         x = self.pre_ln(x)
         res = self.attn(x)                   # (B, 2, C)  q/k/v are produced & used here
-        x = res + x[:,-1:,:]
+        x = res  + x[:,-1:,:]
         x = self.post_ln(x)
         logits = self.classifier(x[:,0,:])               # (B, num_classes)
         added = torch.cat((logits.detach(),x[:,1,:]),dim=1)
         depth = self.regression(added).squeeze(-1)
         return logits, depth
-    
+
 class LastToken(nn.Module):
     def __init__(self, vec_dim=64, num_heads=4, num_classes=1, attn_dropout=0.001, cls_dropout = 0.001,reg_dropout=0.001):
         super().__init__()
@@ -169,3 +169,31 @@ class LastToken(nn.Module):
         depth = self.regression(added).squeeze(-1)
         return logits, depth
     
+class MTCrossModel(nn.Module):
+    def __init__(self, vec_dim=64, num_heads=4, num_classes=2, attn_dropout=0.001, cls_dropout = 0.001,reg_dropout=0.001):
+        super().__init__()
+        self.attn = MutiTaskCAttention(vec_dim, num_heads, attn_dropout=attn_dropout,proj_dropout=0.1)
+        
+        D = vec_dim // num_heads
+        self.querys = nn.Parameter(torch.zeros(1, num_heads, 2, D))
+        nn.init.trunc_normal_(self.querys, std=0.02)
+
+        self.pre_ln = nn.LayerNorm(vec_dim)
+        self.post_ln = nn.LayerNorm(vec_dim)
+        self.classifier = nn.Sequential(
+            nn.Linear(vec_dim,16),
+            nn.GELU(),
+            nn.Dropout(cls_dropout),
+            nn.Linear(16,num_classes)
+        )
+        self.regression = RegModule(in_dim=vec_dim + num_classes, arms=24, necks=36, dropout=reg_dropout)
+
+    def forward(self,x):  # token_ids: (B, T)
+        x = self.pre_ln(x)
+        x = self.attn(self.querys, x)                   # (B, 2, C)  q/k/v are produced & used here
+        # x = res  + x[:,-1:,:]
+        x = self.post_ln(x)
+        logits = self.classifier(x[:,0,:])               # (B, num_classes)
+        added = torch.cat((logits.detach(),x[:,1,:]),dim=1)
+        depth = self.regression(added).squeeze(-1)
+        return logits, depth

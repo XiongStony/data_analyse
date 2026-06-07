@@ -3,7 +3,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 from myMLlib import set_seed,  WMSE, count_parameters, get_R, get_optimizer_weight_decay_parameters
 from auto_training_fun import Wor, find_weight
-from NeuralNetworks import Traditional, RegClassifier, CrossAtten, LastToken, W2qLastToken
+from NeuralNetworks import Traditional, RegClassifier, CrossAtten, LastToken, W2qLastToken,MTCrossModel
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, confusion_matrix,  roc_curve, roc_auc_score
 import torch

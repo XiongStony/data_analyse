@@ -1,0 +1,6 @@
+ 
+ MTCrossModel, att0 , seed = 43, r = 32,  atthead = 2, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 8, Train Loss = 0.0962851494550705, reg best loss = 0.16585087776184082, cls best loss = 0.0005239796591922641, R = 0.8791399002075195, 
+             reg_dropout = 0.1, reg_weight = 0.8, mode parameters = 6575
+         best loss = 0.1730788293061778 b reg = 0.16595767438411713  b cls = 0.0007121154922060668
