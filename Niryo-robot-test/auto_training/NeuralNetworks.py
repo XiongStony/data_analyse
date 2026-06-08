@@ -125,7 +125,7 @@ class CrossAtten(nn.Module):
 class W2qLastToken(nn.Module):
     def __init__(self, vec_dim=64, num_heads=4, num_classes=2, attn_dropout=0.001, cls_dropout = 0.001,reg_dropout=0.001):
         super().__init__()
-        self.attn = WqAttention(vec_dim, num_heads, emb_length=2, attn_dropout=attn_dropout,proj_dropout=0.1)
+        self.attn = WqAttention(vec_dim, num_heads, emb_length=2, attn_dropout=attn_dropout,proj_dropout=0.1,backend="math")
         self.pre_ln = nn.LayerNorm(vec_dim)
         self.post_ln = nn.LayerNorm(vec_dim)
         self.classifier = nn.Sequential(

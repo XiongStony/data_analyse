@@ -17,4 +17,4 @@ W2qLastTokenNN:
     reg_dropout: 0.1
     weight_decay: 0.0
     learning_rate: !!float 1e-3
-    w_reg: 0.6
+    w_reg: 0.8
