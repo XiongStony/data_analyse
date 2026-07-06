@@ -197,3 +197,21 @@ class MTCrossModel(nn.Module):
         added = torch.cat((logits.detach(),x[:,1,:]),dim=1)
         depth = self.regression(added).squeeze(-1)
         return logits, depth
+    
+    
+class WithoutAttention(nn.Module):
+    def __init__(self, vec_dim=64,  num_classes=2, cls_dropout = 0.001,reg_dropout=0.001):
+        super().__init__()
+        self.classifier = nn.Sequential(
+            nn.Linear(vec_dim,16),
+            nn.GELU(),
+            nn.Dropout(cls_dropout),
+            nn.Linear(16,num_classes)
+        )
+        self.regression = RegModule(in_dim=vec_dim + num_classes, arms=24, necks=36, dropout=reg_dropout)
+
+    def forward(self,x):  # token_ids: (B, T)
+        logits = self.classifier(x)               # (B, num_classes)
+        added = torch.cat((logits,x),dim=1)
+        depth = self.regression(added).squeeze(-1)
+        return logits, depth

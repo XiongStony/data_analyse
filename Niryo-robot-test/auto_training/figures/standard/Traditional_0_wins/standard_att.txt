@@ -1,0 +1,6 @@
+ 
+ Traditional, att0 , seed = 43, r = 32,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 48, Train Loss = 0.04345709830522537, reg best loss = 0.17085325717926025, cls best loss = 0.0049079544842243195, R = 0.8709927797317505, 
+             reg_dropout = 0.1, reg_weight = 0.8, mode parameters = 7503
+         best loss = 0.22561199683696032 b reg = 0.17570602893829346  b cls = 0.004990596789866686

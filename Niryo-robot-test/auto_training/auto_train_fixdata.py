@@ -219,7 +219,7 @@ if __name__ == "__main__":
         cls_y_te_tensor = torch.tensor(y_te[:,0], dtype=torch.long).squeeze().to(device)
         reg_y_te_tensor = torch.tensor(y_te[:,1], dtype=torch.float32).squeeze().to(device)
 
-
+        print(f"data size = train {X_train_tensor.shape} ver {X_ver_tensor.shape} test {X_te_tensor.shape}")
         idx = torch.randperm(X_train_tensor.size(0))  # 随机打乱索引
         X_train_tensor = X_train_tensor[idx]
         cls_y_train_tensor = cls_y_train_tensor[idx]

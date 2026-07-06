@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 import numpy as np
 from myMLlib import set_seed,  WMSE, count_parameters, get_R, get_optimizer_weight_decay_parameters
-from auto_training_fun import Wor, find_weight
-from NeuralNetworks import Traditional, RegClassifier, CrossAtten, LastToken, W2qLastToken,MTCrossModel
+from auto_training_fun import Wor, find_weight,get_window_Xy
+from NeuralNetworks import Traditional, WithoutAttention
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, confusion_matrix,  roc_curve, roc_auc_score
 import torch
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     materials = list(materials.values())
     with open("parameters.yml",'r') as file:
         all_parameters = yaml.safe_load(file)
-        NN_parameters = all_parameters["TraditionalNN"]
+        NN_parameters = all_parameters["WithoutAttentionNN"]
 
     plt.rcParams.update({
         'font.size': 14,
@@ -195,45 +195,14 @@ if __name__ == "__main__":
 
     best_reg_losses = {"epoch": [], "val": []}
     best_cls_losses = {"epoch": [], "val": []}
-    win = 10
 
-    swlist = []
-    swlist_r = []
-    ylist = []
-    y_rlist = []
-    y_depth_list = []
-    y_r_depth_list = []
-    for channel,label, depth in zip(channelist,labellist,depthlist):
-        data = sliding_window_view(channel, axis=0, window_shape=win).transpose(0,2,1)
-        depth_data = depth[win-1:]
-        y = np.full(data.shape[0], label, dtype=int)
-        swlist.append(data)
-        ylist.append(y)
-        y_depth_list.append(depth_data)
-    for channel,label, depth in zip(channelist_r,label_test,depthtest):
-        data = sliding_window_view(channel, axis=0, window_shape=win).transpose(0,2,1)
-        depth_data = depth[win-1:]
-        y = np.full(data.shape[0], label, dtype=int)
-        swlist_r.append(data)
-        y_rlist.append(y)
-        y_r_depth_list.append(depth_data)
-
-    X = np.concatenate(swlist, axis=0)
-    X_r = np.concatenate(swlist_r, axis=0)
-    y_class = np.concatenate(ylist)
-    y_r_class = np.concatenate(y_rlist)
-    y_depth = np.concatenate(y_depth_list)
-    y_r_depth = np.concatenate(y_r_depth_list)
-    y = np.stack((y_class,y_depth),axis=1)
-    y_r = np.stack((y_r_class,y_r_depth),axis=1)
-    print(X.shape)
-    print(X_r.shape)
-    print(y_class.shape)
-    print(y_r_class.shape)
-    print(y_depth.shape)
-    print(y_r_depth.shape)
-    print(y.shape)
-    print(y_r.shape)
+    win = 1
+    fixed_win = 10
+    X_pre, y_pre = get_window_Xy(fixed_win, channelist, labellist, depthlist)
+    X_r_pre, y_r_pre = get_window_Xy(fixed_win, channelist_r,label_test,depthtest)
+    X = X_pre[:,-win,:]
+    y = y_pre
+    X_r, y_r = X_r_pre[:,-win,:], y_r_pre
 
 
     X_ver,X_te,y_ver,y_te = train_test_split(X_r, y_r, test_size=0.5,shuffle=True)
@@ -259,8 +228,7 @@ if __name__ == "__main__":
     print(X_te_tensor.shape)
     print(reg_y_te_tensor.shape)
 
-    numhead = NN_parameters["numhead"]
-    atten_dropout = NN_parameters["atten_dropout"]
+
     cls_dropout = NN_parameters["cls_dropout"]
     reg_dropout = NN_parameters["reg_dropout"]
     weight_decay = NN_parameters["weight_decay"]
@@ -278,7 +246,7 @@ if __name__ == "__main__":
     set_seed(seed)
 
     ## ======Model =========
-    model = Traditional(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+    model = WithoutAttention(X.shape[-1],num_classes=2,cls_dropout=cls_dropout, reg_dropout=reg_dropout).to(device)
 
     optimizer = optim.Adam(model.parameters(), weight_decay=weight_decay, lr=pre_training_learning_rate)
     num_epochs = args.epoch
@@ -435,7 +403,7 @@ if __name__ == "__main__":
 
         para = count_parameters(model)
 
-        text = f" \n {model.__class__.__name__}, att{k} , seed = {seed}, r = {r},  atthead = {numhead}, atten_dropout = {atten_dropout}, \n \
+        text = f" \n {model.__class__.__name__}, att{k} , seed = {seed}, r = {r},  atthead = 0, atten_dropout = 0, \n \
         win = {win}, cls_dropout = {cls_dropout}, learning_rate = {pre_training_learning_rate}, \n \
         cls wrong prediction = {cls_wrong_predicts}, Train Loss = {loss.item()}, reg best loss = {best_reg_loss}, cls best loss = {best_cls_loss}, R = {R}, \n \
             reg_dropout = {reg_dropout}, reg_weight = {w_reg}, mode parameters = {para}\n \
