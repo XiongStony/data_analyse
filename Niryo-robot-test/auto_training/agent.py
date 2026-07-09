@@ -34,7 +34,7 @@ if __name__ == "__main__":
     materials = list(materials.values())
     with open("parameters.yml",'r') as file:
         all_parameters = yaml.safe_load(file)
-        NN_parameters = all_parameters["TraditionalNN"]
+        NN_parameters = all_parameters["W2qLastTokenNN"]
 
     plt.rcParams.update({
         'font.size': 14,
@@ -188,8 +188,10 @@ if __name__ == "__main__":
     )
     print("Using device:", device)
 
-    figure_path = "figures/standard"
-    os.makedirs(figure_path,exist_ok=True)
+    train_path = "figures/standard"
+    os.makedirs(train_path,exist_ok=True)
+    test_path = "figures/test"
+    os.makedirs(test_path,exist_ok=True)
 
 # Begin Training
 
@@ -278,7 +280,7 @@ if __name__ == "__main__":
     set_seed(seed)
 
     ## ======Model =========
-    model = Traditional(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+    model = W2qLastToken(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
 
     optimizer = optim.Adam(model.parameters(), weight_decay=weight_decay, lr=pre_training_learning_rate)
     num_epochs = args.epoch
@@ -312,7 +314,7 @@ if __name__ == "__main__":
                 verify_cls_losses.append(cls_item)
                 reg_item = ver_reg_loss.item()
                 verify_reg_losses.append(reg_item)
-                l = reg_item + 10 * cls_item
+                l = 1 * reg_item + 10 * cls_item
             if l < best_loss and epoch > 4000:
                 best_loss = l
                 best_epoch = epoch
@@ -335,88 +337,97 @@ if __name__ == "__main__":
 
     ## Test and Draw
         k = 0
-        while os.path.exists(os.path.join(figure_path,f"{model.__class__.__name__}_{k}_wins")):
+        while os.path.exists(os.path.join(train_path,f"{model.__class__.__name__}_{k}_wins")):
             k += 1
-        wins_folder = os.path.join(figure_path,f"{model.__class__.__name__}_{k}_wins")
+        wins_folder = os.path.join(train_path,f"{model.__class__.__name__}_{k}_wins")
         os.makedirs(wins_folder,exist_ok=True)
         torch.save(model.state_dict(),os.path.join(wins_folder,f"{model.__class__.__name__}_att{k}win{win}.pt"))
+    elif args.mode == "test":
+        model_num = 38
+        model_save_folder = f"{type(model).__name__}_{model_num}_wins"
+        path = f"{train_path}/{model_save_folder}/{type(model).__name__}_att{model_num}win{win}.pt"
+        state_dict = torch.load(path,map_location=device)
+        model.load_state_dict(state_dict)
+        wins_folder = os.path.join(test_path,model_save_folder)
+        os.makedirs(wins_folder,exist_ok=True)
 
-        model.eval()
-        with torch.no_grad():
-            predict_logits, predict_depth = model(X_te_tensor)
-            cls_predict_np = torch.argmax(predict_logits, dim=1).cpu().numpy()
-            reg_predict_np = predict_depth.cpu().numpy()
-            cls_y_te_np = cls_y_te_tensor.cpu().numpy()
-            reg_y_te_np = reg_y_te_tensor.cpu().numpy()
-            accuracy = accuracy_score(cls_y_te_np, cls_predict_np)
-            cm       = confusion_matrix(cls_y_te_np, cls_predict_np)
+    model.eval()
+    with torch.no_grad():
+        predict_logits, predict_depth = model(X_te_tensor)
+        cls_predict_np = torch.argmax(predict_logits, dim=1).cpu().numpy()
+        reg_predict_np = predict_depth.cpu().numpy()
+        cls_y_te_np = cls_y_te_tensor.cpu().numpy()
+        reg_y_te_np = reg_y_te_tensor.cpu().numpy()
+        accuracy = accuracy_score(cls_y_te_np, cls_predict_np)
+        cm       = confusion_matrix(cls_y_te_np, cls_predict_np)
 
-        R = get_R(reg_y_te_np, reg_predict_np)
-
-        cls_wrong_predicts = np.sum(cls_predict_np != cls_y_te_np)
+    R = get_R(reg_y_te_np, reg_predict_np)
+    MSE = ((reg_y_te_np - reg_predict_np)**2).mean()
+    RMSE = np.sqrt(MSE)
+    MAE = np.abs(reg_y_te_np - reg_predict_np).mean()
+    cls_wrong_predicts = np.sum(cls_predict_np != cls_y_te_np)
         
-        fig = plt.figure(dpi=150)
-        ax = fig.add_subplot(111)
-        sns.heatmap(
-            cm,
-            annot=True,
-            fmt="d",
-            cmap="Blues",
-            cbar=False,
-            xticklabels=realmater,
-            yticklabels=realmater,
-            annot_kws={"size": 24}  # 设置数字字体大小
-        )
-        plt.xlabel("Predicted Label")
-        plt.ylabel("True Label")
-        # plt.title("Experiment of (Time damain)")
-        plt.xticks()
-        plt.yticks()
-        plt.savefig(f"{wins_folder}/{model.__class__.__name__}_att{k}win{win}_cm.pdf", format="pdf", bbox_inches="tight")
+    fig = plt.figure(dpi=150)
+    ax = fig.add_subplot(111)
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt="d",
+        cmap="Blues",
+        cbar=False,
+        xticklabels=realmater,
+        yticklabels=realmater,
+        annot_kws={"size": 24}  # 设置数字字体大小
+    )
+    plt.xlabel("Predicted Label")
+    plt.ylabel("True Label")
+    # plt.title("Experiment of (Time damain)")
+    plt.xticks()
+    plt.yticks()
+    plt.savefig(f"{wins_folder}/{model.__class__.__name__}_cm.pdf", format="pdf", bbox_inches="tight")
 
 
-        num = 18000
+    out_dep_np, reg_np = reg_predict_np + 2, reg_y_te_np + 2
+    labels = np.unique(reg_np)
+    mask   = labels[:, None] == reg_np[None, :]   # (K, N)
+    plt.figure(figsize=(6, 20), dpi =150)
 
-        out_dep_np, reg_np = reg_predict_np[:num] + 2, reg_y_te_np[:num] + 2
-        labels = np.unique(reg_np)
-        mask   = labels[:, None] == reg_np[None, :]   # (K, N)
-        plt.figure(figsize=(6, 20), dpi =150)
+    for i, (lab, ma) in enumerate(zip(labels, mask)):
 
-        for i, (lab, ma) in enumerate(zip(labels, mask)):
+        # 该真实标签下的预测深度
+        plt.subplot(5,1,i+1)
+        vals = out_dep_np[ma]
 
-            # 该真实标签下的预测深度
-            plt.subplot(5,1,i+1)
-            vals = out_dep_np[ma]
+        mse = ((lab - vals)**2).mean()
+        print(mse)
+        plt.hist(vals, bins=50, color='blue', alpha=0.6, density=True)
+        ax = plt.gca()
+        ax.text(0.72, 0.78, f"MSE = {mse:.2f}",
+            transform=ax.transAxes, fontsize=11,
+            va='top', ha='left',
+            bbox=dict(boxstyle='round', facecolor='white', alpha=0.75, edgecolor='none'))
+        # 画一条真实深度的竖直线
+        plt.axvline(lab, color='red', linestyle='--', linewidth=1.5,
+                    label=f"True depth = {lab}")
+        
+        plt.axvline(vals.mean(), color ='black', linestyle='--', linewidth=1.5,
+                    label=f"Expectation = {vals.mean():.2f}")
 
-            mse = ((lab - vals)**2).mean()
-            print(mse)
-            plt.hist(vals, bins=50, color='blue', alpha=0.6, density=True)
-            ax = plt.gca()
-            ax.text(0.72, 0.78, f"MSE = {mse:.2f}",
-                transform=ax.transAxes, fontsize=11,
-                va='top', ha='left',
-                bbox=dict(boxstyle='round', facecolor='white', alpha=0.75, edgecolor='none'))
-            # 画一条真实深度的竖直线
-            plt.axvline(lab, color='red', linestyle='--', linewidth=1.5,
-                        label=f"True depth = {lab}")
-            
-            plt.axvline(vals.mean(), color ='black', linestyle='--', linewidth=1.5,
-                        label=f"Expectation = {vals.mean():.2f}")
+        # 让真实标签大致居中（可按需要调 delta）
+        delta = 5  # 比如左右各 2 单位
+        plt.xlim(lab - delta, lab + delta)
+        plt.ylim(0,2.2)
+        plt.xticks(range(int(lab) - delta, int(lab) + delta +1))
+        plt.xlabel("Predicted depth")
+        plt.ylabel("Probability Density")
+        plt.grid(True, axis='y')
+        plt.title(f"Probability of Predicted depth distribution", fontsize = 15)
+        plt.legend(fontsize=10)
+    plt.tight_layout()
+    plt.savefig(f"{wins_folder}/{model.__class__.__name__}_pdfs.pdf", format="pdf", bbox_inches="tight")
 
-            # 让真实标签大致居中（可按需要调 delta）
-            delta = 5  # 比如左右各 2 单位
-            plt.xlim(lab - delta, lab + delta)
-            plt.ylim(0,2.2)
-            plt.xticks(range(int(lab) - delta, int(lab) + delta +1))
-            plt.xlabel("Predicted depth")
-            plt.ylabel("Probability Density")
-            plt.grid(True, axis='y')
-            plt.title(f"Probability of Predicted depth distribution", fontsize = 15)
-            plt.legend(fontsize=10)
-        plt.tight_layout()
-        plt.savefig(f"{wins_folder}/{model.__class__.__name__}_att{k}win{win}_pdfs.pdf", format="pdf", bbox_inches="tight")
-
-
+    para = count_parameters(model)
+    if args.mode == "train":    
         fig = plt.figure(dpi=150)
         ax = fig.add_subplot(111)
         ax.plot(train_losses,label="train loss")
@@ -430,23 +441,24 @@ if __name__ == "__main__":
         ax.axvline(x=best_epoch, linestyle='--', color='blue',
                             label=f"epoch {best_epoch} at reg {b_reg_loss:.3f} cls {b_cls_loss:.3f}")
         ax.legend()
-        plt.savefig(os.path.join(wins_folder, f"win{win}.pdf"), format="pdf", bbox_inches="tight")
+        plt.savefig(os.path.join(wins_folder, "losses.pdf"), format="pdf", bbox_inches="tight")
 
-
-        para = count_parameters(model)
 
         text = f" \n {model.__class__.__name__}, att{k} , seed = {seed}, r = {r},  atthead = {numhead}, atten_dropout = {atten_dropout}, \n \
         win = {win}, cls_dropout = {cls_dropout}, learning_rate = {pre_training_learning_rate}, \n \
-        cls wrong prediction = {cls_wrong_predicts}, Train Loss = {loss.item()}, reg best loss = {best_reg_loss}, cls best loss = {best_cls_loss}, R = {R}, \n \
+        cls wrong prediction = {cls_wrong_predicts}, Train Loss = {loss.item()}, reg best loss = {best_reg_loss}, cls best loss = {best_cls_loss}, \n \
             reg_dropout = {reg_dropout}, reg_weight = {w_reg}, mode parameters = {para}\n \
-        best loss = {best_loss} b reg = {b_reg_loss}  b cls = {b_cls_loss}\n"
-        record_path = os.path.join(wins_folder,"standard_att.txt")
-        with open(record_path,"a") as f:
-            f.write(text)
+        final best loss = {best_loss} final b reg = {b_reg_loss} final b cls = {b_cls_loss}\n \
+        R:{R},  MSE:{MSE},  RMSE:{RMSE},  MAE:{MAE}\n"
+    
+    elif args.mode == "test":
+        text = f" \n {model.__class__.__name__}, modelnum = {model_num} seed = {seed}, r = {r},  atthead = {numhead}, atten_dropout = {atten_dropout}, \n \
+        win = {win}, cls_dropout = {cls_dropout}, learning_rate = {pre_training_learning_rate}, \n \
+        mode parameters = {para}\n \
+        R:{R},  MSE:{MSE},  RMSE:{RMSE},  MAE:{MAE}\n"
 
-        best_reg_losses["epoch"].append(reg_min_idx)
-        best_reg_losses["val"].append(best_reg_loss)
-        best_cls_losses["epoch"].append(cls_min_idx)
-        best_cls_losses["val"].append(best_cls_loss)
+    record_path = os.path.join(wins_folder,"standard_att.txt")
+    with open(record_path,"a") as f:
+        f.write(text)
 
-        print("Win =", win)
+    print("Win =", win)

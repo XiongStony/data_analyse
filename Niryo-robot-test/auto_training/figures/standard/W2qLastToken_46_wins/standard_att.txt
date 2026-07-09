@@ -1,0 +1,7 @@
+ 
+ W2qLastToken, att46 , seed = 42, r = 32,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 14, Train Loss = 0.049996886402368546, reg best loss = 0.14676055312156677, cls best loss = 0.0008579256827943027, 
+             reg_dropout = 0.1, reg_weight = 0.7, mode parameters = 8623
+         final best loss = 0.15861203614622355 final b reg = 0.14689157903194427 final b cls = 0.001172045711427927
+         R:0.8868310451507568,  MSE:0.1515735238790512,  RMSE:0.38932445645332336,  MAE:0.27403998374938965

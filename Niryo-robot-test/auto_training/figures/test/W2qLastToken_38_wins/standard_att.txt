@@ -1,0 +1,10 @@
+ 
+ W2qLastToken, modelnum = 38 seed = 42, r = 32,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         mode parameters = 8623
+         R:0.8835402131080627,  MSE:0.1559811383485794,  RMSE:0.3949444890022278,  MAE:0.271991491317749
+ 
+ W2qLastToken, modelnum = 38 seed = 42, r = 32,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         mode parameters = 8623
+         R:0.8835402131080627,  MSE:0.1559811383485794,  RMSE:0.3949444890022278,  MAE:0.271991491317749
