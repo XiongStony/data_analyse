@@ -201,7 +201,7 @@ if __name__ == "__main__":
     win = 10
     X_pre, y_pre = get_window_Xy(win, channelist, labellist, depthlist)
     X_r_pre, y_r_pre = get_window_Xy(win, channelist_r,label_test,depthtest)
-    X = X_pre[:,-win,:]
+    X = X_pre
     y = y_pre
     X_r, y_r = X_r_pre, y_r_pre
 
@@ -381,9 +381,9 @@ if __name__ == "__main__":
                     label=f"Expectation = {vals.mean():.2f}")
 
         # 让真实标签大致居中（可按需要调 delta）
-        delta = 5  # 比如左右各 2 单位
+        delta = 3  # 比如左右各 2 单位
         plt.xlim(lab - delta, lab + delta)
-        plt.ylim(0,2.2)
+        plt.ylim(0,3.3)
         plt.xticks(range(int(lab) - delta, int(lab) + delta +1))
         plt.xlabel("Predicted depth")
         plt.ylabel("Probability Density")
