@@ -3,7 +3,7 @@ auto_training_fixdata:
   fixed_win: 15
 
 TraditionalNN:
-    seed: !!int 43
+    seed: !!int 41
     numhead: !!int 4
     atten_dropout: 0.2
     cls_dropout: 0.1
@@ -39,3 +39,13 @@ W2qLastTokenNN:
     weight_decay: 0.0
     learning_rate: !!float 1e-3
     w_reg: 0.75
+
+MTCrossModelNN: 
+    seed: !!int 35
+    numhead: !!int 4
+    atten_dropout: 0.2
+    cls_dropout: 0.1
+    reg_dropout: 0.1
+    weight_decay: 0.0
+    learning_rate: !!float 1e-3
+    w_reg: 0.8

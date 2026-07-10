@@ -34,7 +34,7 @@ if __name__ == "__main__":
     materials = list(materials.values())
     with open("parameters.yml",'r') as file:
         all_parameters = yaml.safe_load(file)
-        NN_parameters = all_parameters["W2qLastTokenNN"]
+        NN_parameters = all_parameters["MTCrossModelNN"]
 
     plt.rcParams.update({
         'font.size': 14,
@@ -280,7 +280,7 @@ if __name__ == "__main__":
     set_seed(seed)
 
     ## ======Model =========
-    model = W2qLastToken(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+    model = MTCrossModel(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
 
     optimizer = optim.Adam(model.parameters(), weight_decay=weight_decay, lr=pre_training_learning_rate)
     num_epochs = args.epoch
@@ -316,7 +316,6 @@ if __name__ == "__main__":
                 verify_reg_losses.append(reg_item)
                 l = 1 * reg_item + 8 * cls_item
             if l < best_loss and epoch > 4000:
-            # if epoch == 23000:
                 best_loss = l
                 best_epoch = epoch
                 b_reg_loss = reg_item
@@ -344,7 +343,7 @@ if __name__ == "__main__":
         os.makedirs(wins_folder,exist_ok=True)
         torch.save(model.state_dict(),os.path.join(wins_folder,f"{model.__class__.__name__}_att{k}win{win}.pt"))
     elif args.mode == "test":
-        model_num = 38
+        model_num = 1
         model_save_folder = f"{type(model).__name__}_{model_num}_wins"
         path = f"{train_path}/{model_save_folder}/{type(model).__name__}_att{model_num}win{win}.pt"
         state_dict = torch.load(path,map_location=device)
@@ -453,7 +452,7 @@ if __name__ == "__main__":
         R:{R},  MSE:{MSE},  RMSE:{RMSE},  MAE:{MAE}\n"
     
     elif args.mode == "test":
-        text = f" \n {model.__class__.__name__}, modelnum = {model_num} seed = {seed}, r = {r},  atthead = {numhead}, atten_dropout = {atten_dropout}, \n \
+        text = f" \n {model.__class__.__name__}, modelnum = {model_num}, r = {r},  atthead = {numhead}, atten_dropout = {atten_dropout}, \n \
         win = {win}, cls_dropout = {cls_dropout}, learning_rate = {pre_training_learning_rate}, \n \
         mode parameters = {para}\n \
         R:{R},  MSE:{MSE},  RMSE:{RMSE},  MAE:{MAE}\n"
