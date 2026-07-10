@@ -21,7 +21,7 @@ WithoutAttentionNN:
     w_reg: 0.4
 
 LastTokenNN:
-    seed: !!int 43
+    seed: !!int 35
     numhead: !!int 4
     atten_dropout: 0.2
     cls_dropout: 0.1

@@ -34,7 +34,7 @@ if __name__ == "__main__":
     materials = list(materials.values())
     with open("parameters.yml",'r') as file:
         all_parameters = yaml.safe_load(file)
-        NN_parameters = all_parameters["MTCrossModelNN"]
+        NN_parameters = all_parameters["LastTokenNN"]
 
     plt.rcParams.update({
         'font.size': 14,
@@ -280,7 +280,7 @@ if __name__ == "__main__":
     set_seed(seed)
 
     ## ======Model =========
-    model = MTCrossModel(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+    model = LastToken(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
 
     optimizer = optim.Adam(model.parameters(), weight_decay=weight_decay, lr=pre_training_learning_rate)
     num_epochs = args.epoch
@@ -431,7 +431,7 @@ if __name__ == "__main__":
         fig = plt.figure(dpi=150)
         ax = fig.add_subplot(111)
         ax.semilogy(train_losses,label="train loss")
-        ax.semilogy(np.array(verify_cls_losses) * 10,label="cls loss")
+        ax.semilogy(np.array(verify_cls_losses) * 100,label="cls loss")
         ax.semilogy(verify_reg_losses,label="reg loss")
         ax.set_xlim([0,len(train_losses)])
         ax.axvline(x=cls_min_idx, linestyle='--', color='gray',

@@ -1,0 +1,7 @@
+ 
+ LastToken, att7 , seed = 43, r = 32,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 5, Train Loss = 0.05412716791033745, reg best loss = 0.18148544430732727, cls best loss = 0.00021277951600495726, 
+             reg_dropout = 0.1, reg_weight = 0.8, mode parameters = 7503
+         final best loss = 0.18440376361832023 final b reg = 0.18148544430732727 final b cls = 0.0003647899138741195
+         R:0.8634852170944214,  MSE:0.1840008795261383,  RMSE:0.42895323038101196,  MAE:0.29869359731674194
