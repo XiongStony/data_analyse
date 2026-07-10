@@ -314,8 +314,9 @@ if __name__ == "__main__":
                 verify_cls_losses.append(cls_item)
                 reg_item = ver_reg_loss.item()
                 verify_reg_losses.append(reg_item)
-                l = 1 * reg_item + 10 * cls_item
+                l = 1 * reg_item + 8 * cls_item
             if l < best_loss and epoch > 4000:
+            # if epoch == 23000:
                 best_loss = l
                 best_epoch = epoch
                 b_reg_loss = reg_item
@@ -430,9 +431,9 @@ if __name__ == "__main__":
     if args.mode == "train":    
         fig = plt.figure(dpi=150)
         ax = fig.add_subplot(111)
-        ax.plot(train_losses,label="train loss")
-        ax.plot(verify_cls_losses,label="cls loss")
-        ax.plot(verify_reg_losses,label="reg loss")
+        ax.semilogy(train_losses,label="train loss")
+        ax.semilogy(np.array(verify_cls_losses) * 10,label="cls loss")
+        ax.semilogy(verify_reg_losses,label="reg loss")
         ax.set_xlim([0,len(train_losses)])
         ax.axvline(x=cls_min_idx, linestyle='--', color='gray',
                             label=f"Best Verify cls @ epoch {cls_min_idx} at {best_cls_loss:.2f}")
