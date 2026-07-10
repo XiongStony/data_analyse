@@ -200,7 +200,7 @@ class MTCrossModel(nn.Module):
     
     
 class WithoutAttention(nn.Module):
-    def __init__(self, vec_dim=64,  num_classes=2, cls_dropout = 0.001,reg_dropout=0.001):
+    def __init__(self, vec_dim=64, attn_dropout=0, num_heads=0, num_classes=2, cls_dropout = 0.001,reg_dropout=0.001):
         super().__init__()
         self.classifier = nn.Sequential(
             nn.Linear(vec_dim,16),

@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 import numpy as np
 from myMLlib import set_seed,  WMSE, count_parameters, get_R, get_optimizer_weight_decay_parameters
-from auto_training_fun import Wor, find_weight
-from NeuralNetworks import Traditional, RegClassifier, CrossAtten, LastToken, W2qLastToken,MTCrossModel
+from auto_training_fun import Wor, find_weight, get_window_Xy
+from NeuralNetworks import Traditional, RegClassifier, CrossAtten, LastToken, W2qLastToken,MTCrossModel, WithoutAttention
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, confusion_matrix,  roc_curve, roc_auc_score
 import torch
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     materials = list(materials.values())
     with open("parameters.yml",'r') as file:
         all_parameters = yaml.safe_load(file)
-        NN_parameters = all_parameters["LastTokenNN"]
+        NN_parameters = all_parameters["WithoutAttentionNN"]
 
     plt.rcParams.update({
         'font.size': 14,
@@ -197,46 +197,13 @@ if __name__ == "__main__":
 
     best_reg_losses = {"epoch": [], "val": []}
     best_cls_losses = {"epoch": [], "val": []}
+
     win = 10
-
-    swlist = []
-    swlist_r = []
-    ylist = []
-    y_rlist = []
-    y_depth_list = []
-    y_r_depth_list = []
-    for channel,label, depth in zip(channelist,labellist,depthlist):
-        data = sliding_window_view(channel, axis=0, window_shape=win).transpose(0,2,1)
-        depth_data = depth[win-1:]
-        y = np.full(data.shape[0], label, dtype=int)
-        swlist.append(data)
-        ylist.append(y)
-        y_depth_list.append(depth_data)
-    for channel,label, depth in zip(channelist_r,label_test,depthtest):
-        data = sliding_window_view(channel, axis=0, window_shape=win).transpose(0,2,1)
-        depth_data = depth[win-1:]
-        y = np.full(data.shape[0], label, dtype=int)
-        swlist_r.append(data)
-        y_rlist.append(y)
-        y_r_depth_list.append(depth_data)
-
-    X = np.concatenate(swlist, axis=0)
-    X_r = np.concatenate(swlist_r, axis=0)
-    y_class = np.concatenate(ylist)
-    y_r_class = np.concatenate(y_rlist)
-    y_depth = np.concatenate(y_depth_list)
-    y_r_depth = np.concatenate(y_r_depth_list)
-    y = np.stack((y_class,y_depth),axis=1)
-    y_r = np.stack((y_r_class,y_r_depth),axis=1)
-    print(X.shape)
-    print(X_r.shape)
-    print(y_class.shape)
-    print(y_r_class.shape)
-    print(y_depth.shape)
-    print(y_r_depth.shape)
-    print(y.shape)
-    print(y_r.shape)
-
+    X_pre, y_pre = get_window_Xy(win, channelist, labellist, depthlist)
+    X_r_pre, y_r_pre = get_window_Xy(win, channelist_r,label_test,depthtest)
+    X = X_pre[:,-win,:]
+    y = y_pre
+    X_r, y_r = X_r_pre, y_r_pre
 
     X_ver,X_te,y_ver,y_te = train_test_split(X_r, y_r, test_size=0.5,shuffle=True)
     X_train_tensor = torch.tensor(X, dtype=torch.float32).to(device)
@@ -280,7 +247,7 @@ if __name__ == "__main__":
     set_seed(seed)
 
     ## ======Model =========
-    model = LastToken(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+    model = WithoutAttention(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
 
     optimizer = optim.Adam(model.parameters(), weight_decay=weight_decay, lr=pre_training_learning_rate)
     num_epochs = args.epoch

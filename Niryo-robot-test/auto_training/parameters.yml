@@ -14,12 +14,14 @@ TraditionalNN:
 
 WithoutAttentionNN:
     seed: !!int 43
+    numhead: !!int 0
+    atten_dropout: 0
     cls_dropout: 0.1
     reg_dropout: 0.1
     weight_decay: 0.0
     learning_rate: !!float 1e-3
     w_reg: 0.4
-
+    
 LastTokenNN:
     seed: !!int 35
     numhead: !!int 4
