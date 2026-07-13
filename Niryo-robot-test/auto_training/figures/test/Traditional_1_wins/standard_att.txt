@@ -3,3 +3,27 @@
          win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
          mode parameters = 7503
          R:0.8681818246841431,  MSE:0.1764211654663086,  RMSE:0.42002519965171814,  MAE:0.2757748067378998
+ 
+ Traditional, modelnum = 1, r = 32,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         mode parameters = 7503
+         R:0.8681818246841431,  MSE:0.1764211654663086,  RMSE:0.42002519965171814,  MAE:0.2757748067378998
+ 
+        mse
+ 2mm : 0.10677698999643326
+ 3mm : 0.15042182803153992 
+ 4mm : 0.15581807494163513 
+ 5mm : 0.21904873847961426
+ 6mm : 0.1860032081604004
+ 
+ Traditional, modelnum = 1, r = 32,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         mode parameters = 7503
+         R:0.8681818246841431,  MSE:0.1764211654663086,  RMSE:0.42002519965171814,  MAE:0.2757748067378998
+ 
+        mse
+ 2mm : 0.107
+ 3mm : 0.150 
+ 4mm : 0.156 
+ 5mm : 0.219
+ 6mm : 0.186

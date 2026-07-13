@@ -1,0 +1,12 @@
+ 
+ MTCrossModel, modelnum = 2, r = 32,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         mode parameters = 6575
+         R:0.8785350322723389,  MSE:0.16299757361412048,  RMSE:0.4037295877933502,  MAE:0.2855589687824249
+ 
+        mse
+ 2mm : 0.135
+ 3mm : 0.108 
+ 4mm : 0.184 
+ 5mm : 0.181
+ 6mm : 0.181

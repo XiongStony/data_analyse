@@ -34,7 +34,7 @@ if __name__ == "__main__":
     materials = list(materials.values())
     with open("parameters.yml",'r') as file:
         all_parameters = yaml.safe_load(file)
-        NN_parameters = all_parameters["WithoutAttentionNN"]
+        NN_parameters = all_parameters["LastTokenNN"]
 
     plt.rcParams.update({
         'font.size': 14,
@@ -198,12 +198,20 @@ if __name__ == "__main__":
     best_reg_losses = {"epoch": [], "val": []}
     best_cls_losses = {"epoch": [], "val": []}
 
-    win = 10
-    X_pre, y_pre = get_window_Xy(win, channelist, labellist, depthlist)
-    X_r_pre, y_r_pre = get_window_Xy(win, channelist_r,label_test,depthtest)
-    X = X_pre
-    y = y_pre
-    X_r, y_r = X_r_pre, y_r_pre
+    if NN_parameters["name"] == "WithoutAttention":
+        win = 1
+        fixwin = 10
+        X_pre, y_pre = get_window_Xy(fixwin, channelist, labellist, depthlist)
+        X_r_pre, y_r_pre = get_window_Xy(fixwin, channelist_r,label_test,depthtest)
+        X, y = X_pre[:,-1,:], y_pre
+        X_r, y_r = X_r_pre[:,-1,:], y_r_pre
+
+    else:
+        win = 10
+        X_pre, y_pre = get_window_Xy(win, channelist, labellist, depthlist)
+        X_r_pre, y_r_pre = get_window_Xy(win, channelist_r,label_test,depthtest)
+        X, y = X_pre, y_pre
+        X_r, y_r = X_r_pre, y_r_pre
 
     X_ver,X_te,y_ver,y_te = train_test_split(X_r, y_r, test_size=0.5,shuffle=True)
     X_train_tensor = torch.tensor(X, dtype=torch.float32).to(device)
@@ -247,7 +255,7 @@ if __name__ == "__main__":
     set_seed(seed)
 
     ## ======Model =========
-    model = WithoutAttention(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+    model = LastToken(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
 
     optimizer = optim.Adam(model.parameters(), weight_decay=weight_decay, lr=pre_training_learning_rate)
     num_epochs = args.epoch
@@ -310,7 +318,7 @@ if __name__ == "__main__":
         os.makedirs(wins_folder,exist_ok=True)
         torch.save(model.state_dict(),os.path.join(wins_folder,f"{model.__class__.__name__}_att{k}win{win}.pt"))
     elif args.mode == "test":
-        model_num = 1
+        model_num = NN_parameters["best"]
         model_save_folder = f"{type(model).__name__}_{model_num}_wins"
         path = f"{train_path}/{model_save_folder}/{type(model).__name__}_att{model_num}win{win}.pt"
         state_dict = torch.load(path,map_location=device)
@@ -358,7 +366,7 @@ if __name__ == "__main__":
     labels = np.unique(reg_np)
     mask   = labels[:, None] == reg_np[None, :]   # (K, N)
     plt.figure(figsize=(6, 20), dpi =150)
-
+    depth_mse = []
     for i, (lab, ma) in enumerate(zip(labels, mask)):
 
         # 该真实标签下的预测深度
@@ -366,6 +374,7 @@ if __name__ == "__main__":
         vals = out_dep_np[ma]
 
         mse = ((lab - vals)**2).mean()
+        depth_mse.append(mse)
         print(mse)
         plt.hist(vals, bins=50, color='blue', alpha=0.6, density=True)
         ax = plt.gca()
@@ -416,13 +425,14 @@ if __name__ == "__main__":
         cls wrong prediction = {cls_wrong_predicts}, Train Loss = {loss.item()}, reg best loss = {best_reg_loss}, cls best loss = {best_cls_loss}, \n \
             reg_dropout = {reg_dropout}, reg_weight = {w_reg}, mode parameters = {para}\n \
         final best loss = {best_loss} final b reg = {b_reg_loss} final b cls = {b_cls_loss}\n \
-        R:{R},  MSE:{MSE},  RMSE:{RMSE},  MAE:{MAE}\n"
+        R:{R},  MSE:{MSE},  RMSE:{RMSE},  MAE:{MAE} \n"
     
     elif args.mode == "test":
         text = f" \n {model.__class__.__name__}, modelnum = {model_num}, r = {r},  atthead = {numhead}, atten_dropout = {atten_dropout}, \n \
         win = {win}, cls_dropout = {cls_dropout}, learning_rate = {pre_training_learning_rate}, \n \
         mode parameters = {para}\n \
-        R:{R},  MSE:{MSE},  RMSE:{RMSE},  MAE:{MAE}\n"
+        R:{R},  MSE:{MSE},  RMSE:{RMSE},  MAE:{MAE}\n \n\
+        mse\n 2mm : {depth_mse[0]:.3f}\n 3mm : {depth_mse[1]:.3f} \n 4mm : {depth_mse[2]:.3f} \n 5mm : {depth_mse[3]:.3f}\n 6mm : {depth_mse[4]:.3f}\n"
 
     record_path = os.path.join(wins_folder,"standard_att.txt")
     with open(record_path,"a") as f:

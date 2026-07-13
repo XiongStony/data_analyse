@@ -18,3 +18,15 @@
          win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
          mode parameters = 8623
          R:0.8898873925209045,  MSE:0.1477634608745575,  RMSE:0.3844001293182373,  MAE:0.25812551379203796
+ 
+ W2qLastToken, modelnum = 65, r = 32,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         mode parameters = 8623
+         R:0.8898873925209045,  MSE:0.1477634608745575,  RMSE:0.3844001293182373,  MAE:0.25812551379203796
+ 
+        mse
+ 2mm : 0.077
+ 3mm : 0.067 
+ 4mm : 0.177 
+ 5mm : 0.183
+ 6mm : 0.169
