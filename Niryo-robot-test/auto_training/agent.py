@@ -34,7 +34,7 @@ if __name__ == "__main__":
     materials = list(materials.values())
     with open("parameters.yml",'r') as file:
         all_parameters = yaml.safe_load(file)
-        NN_parameters = all_parameters["LastTokenNN"]
+        NN_parameters = all_parameters["WithoutAttentionNN"]
 
     plt.rcParams.update({
         'font.size': 14,
@@ -255,7 +255,7 @@ if __name__ == "__main__":
     set_seed(seed)
 
     ## ======Model =========
-    model = LastToken(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+    model = WithoutAttention(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
 
     optimizer = optim.Adam(model.parameters(), weight_decay=weight_decay, lr=pre_training_learning_rate)
     num_epochs = args.epoch
@@ -329,15 +329,21 @@ if __name__ == "__main__":
     model.eval()
     with torch.no_grad():
         predict_logits, predict_depth = model(X_te_tensor)
+        _, train_predict_depth = model(X_train_tensor)
         cls_predict_np = torch.argmax(predict_logits, dim=1).cpu().numpy()
         reg_predict_np = predict_depth.cpu().numpy()
+        train_reg_predict_np = train_predict_depth.cpu().numpy()
         cls_y_te_np = cls_y_te_tensor.cpu().numpy()
         reg_y_te_np = reg_y_te_tensor.cpu().numpy()
+        reg_y_train_np = reg_y_train_tensor.cpu().numpy()
         accuracy = accuracy_score(cls_y_te_np, cls_predict_np)
         cm       = confusion_matrix(cls_y_te_np, cls_predict_np)
 
     R = get_R(reg_y_te_np, reg_predict_np)
+
     MSE = ((reg_y_te_np - reg_predict_np)**2).mean()
+    train_MSE = ((reg_y_train_np - train_reg_predict_np)**2).mean()
+    
     RMSE = np.sqrt(MSE)
     MAE = np.abs(reg_y_te_np - reg_predict_np).mean()
     cls_wrong_predicts = np.sum(cls_predict_np != cls_y_te_np)
@@ -431,7 +437,7 @@ if __name__ == "__main__":
         text = f" \n {model.__class__.__name__}, modelnum = {model_num}, r = {r},  atthead = {numhead}, atten_dropout = {atten_dropout}, \n \
         win = {win}, cls_dropout = {cls_dropout}, learning_rate = {pre_training_learning_rate}, \n \
         mode parameters = {para}\n \
-        R:{R},  MSE:{MSE},  RMSE:{RMSE},  MAE:{MAE}\n \n\
+        R:{R},  MSE:{MSE}, RMSE:{RMSE},  MAE:{MAE}, Train MSE:{train_MSE}\n \n\
         mse\n 2mm : {depth_mse[0]:.3f}\n 3mm : {depth_mse[1]:.3f} \n 4mm : {depth_mse[2]:.3f} \n 5mm : {depth_mse[3]:.3f}\n 6mm : {depth_mse[4]:.3f}\n"
 
     record_path = os.path.join(wins_folder,"standard_att.txt")

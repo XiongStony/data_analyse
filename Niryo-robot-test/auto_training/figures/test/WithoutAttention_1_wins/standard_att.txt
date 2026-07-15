@@ -25,3 +25,15 @@
  4mm : 0.331 
  5mm : 0.324
  6mm : 0.350
+ 
+ WithoutAttention, modelnum = 1, r = 32,  atthead = 0, atten_dropout = 0, 
+         win = 1, cls_dropout = 0.1, learning_rate = 0.001, 
+         mode parameters = 3215
+         R:0.7748826146125793,  MSE:0.3034234941005707, RMSE:0.5508388876914978,  MAE:0.41979172825813293, Train MSE:0.17029286921024323
+ 
+        mse
+ 2mm : 0.798
+ 3mm : 0.168 
+ 4mm : 0.331 
+ 5mm : 0.324
+ 6mm : 0.350

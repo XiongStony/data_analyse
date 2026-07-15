@@ -10,3 +10,15 @@
  4mm : 0.171 
  5mm : 0.204
  6mm : 0.247
+ 
+ LastToken, modelnum = 7, r = 32,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         mode parameters = 7503
+         R:0.8639237880706787,  MSE:0.18260477483272552, RMSE:0.4273228049278259,  MAE:0.29607513546943665, Train MSE:0.04202580079436302
+ 
+        mse
+ 2mm : 0.151
+ 3mm : 0.111 
+ 4mm : 0.171 
+ 5mm : 0.204
+ 6mm : 0.247
