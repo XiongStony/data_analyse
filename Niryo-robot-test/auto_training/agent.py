@@ -34,7 +34,7 @@ if __name__ == "__main__":
     materials = list(materials.values())
     with open("parameters.yml",'r') as file:
         all_parameters = yaml.safe_load(file)
-        NN_parameters = all_parameters["WithoutAttentionNN"]
+        NN_parameters = all_parameters["W2qLastTokenNN"]
 
     plt.rcParams.update({
         'font.size': 14,
@@ -255,7 +255,7 @@ if __name__ == "__main__":
     set_seed(seed)
 
     ## ======Model =========
-    model = WithoutAttention(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+    model = W2qLastToken(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
 
     optimizer = optim.Adam(model.parameters(), weight_decay=weight_decay, lr=pre_training_learning_rate)
     num_epochs = args.epoch
@@ -371,6 +371,7 @@ if __name__ == "__main__":
     out_dep_np, reg_np = reg_predict_np + 2, reg_y_te_np + 2
     labels = np.unique(reg_np)
     mask   = labels[:, None] == reg_np[None, :]   # (K, N)
+    np.savez(os.path.join(wins_folder,"depth_output.npz"),out_dep=out_dep_np, mask=mask)
     plt.figure(figsize=(6, 20), dpi =150)
     depth_mse = []
     for i, (lab, ma) in enumerate(zip(labels, mask)):
