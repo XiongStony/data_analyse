@@ -337,7 +337,7 @@ class MultiHeadSelfAttention(nn.Module):
         self.head_dim = vec_dim // num_heads
         self.causal = causal
         self.pos_enc = SinusoidalPositionalEncoding(vec_dim)
-        self.qkv = nn.Linear(vec_dim, 3 * vec_dim, bias=bias)
+        self.Wqkv = nn.Linear(vec_dim, 3 * vec_dim, bias=bias)
         self.out_proj = nn.Linear(vec_dim, vec_dim, bias=bias)
         self.attn_dropout = attn_dropout
         self.proj_dropout = nn.Dropout(proj_dropout)
@@ -345,13 +345,12 @@ class MultiHeadSelfAttention(nn.Module):
 
     def forward(self, x, key_padding_mask=None):
         B, T, C = x.shape
+        H, D = self.num_heads, self.head_dim
         x = self.pos_enc(x)
-        qkv = self.qkv(x)                 # (B, T, 3C)
-        q, k, v = qkv.chunk(3, dim=-1)    # each (B, T, C)
+        qkv = self.Wqkv(x).view(B, T, 3, H, D)                        # (B,T,3,H,D)
+        qkv = qkv.permute(2, 0, 3, 1, 4)                               # (3,B,H,T,D)
+        q, k, v = qkv.unbind(0)                                           # (B,H,T,D) each
 
-        def reshape_heads(t):
-            return t.view(B, T, self.num_heads, C // self.num_heads).transpose(1, 2)  # (B, H, T, D)
-        q, k, v = map(reshape_heads, (q, k, v))
         attn_mask = None
         if key_padding_mask is not None:
             attn_mask = key_padding_mask[:, None, None, :]  # (B,1,1,T)
@@ -364,6 +363,54 @@ class MultiHeadSelfAttention(nn.Module):
             )  # (B, H, T, D)
 
         y = y.transpose(1, 2).contiguous().view(B, T, C)  # (B, T, C)
+        y = self.out_proj(y)
+        y = self.proj_dropout(y)
+        return y
+    
+class MutiTaskCAttention(nn.Module):
+    def __init__(self, vec_dim, num_heads, attn_dropout=0.0, proj_dropout=0.0, backend = "math", bias=True):
+        super().__init__()
+        assert vec_dim % num_heads == 0
+        self.backend = {
+            "efficient": SDPBackend.EFFICIENT_ATTENTION,
+            "math": SDPBackend.MATH,
+            "flash": SDPBackend.FLASH_ATTENTION,
+            "cudnn": SDPBackend.CUDNN_ATTENTION,
+            "overrideable": SDPBackend.OVERRIDEABLE,
+        }[backend]
+        self.embed_dim = vec_dim
+        self.num_heads = num_heads
+        self.head_dim = vec_dim // num_heads
+        self.pos_enc = SinusoidalPositionalEncoding(vec_dim)
+        self.Wkv = nn.Linear(vec_dim, 2 * vec_dim, bias=bias)
+        self.out_proj = nn.Linear(vec_dim, vec_dim, bias=bias)
+        self.attn_dropout = attn_dropout
+        self.proj_dropout = nn.Dropout(proj_dropout)
+
+
+    def forward(self, q, x):
+        B, T, C = x.shape
+        H, D = self.num_heads, self.head_dim
+        assert C == self.embed_dim
+
+        x = self.pos_enc(x)
+
+        # q: (1,H,2,D) -> (B,H,2,D)
+        q = q.expand(B, -1, -1, -1)
+
+        kv = self.Wkv(x).view(B, T, 2, H, D)      # (B,T,2,H,D)
+        kv = kv.permute(2, 0, 3, 1, 4)            # (2,B,H,T,D)
+        k, v = kv.unbind(0)                       # each: (B,H,T,D)
+
+        with sdpa_kernel(self.backend):
+            y = F.scaled_dot_product_attention(
+                q, k, v,
+                attn_mask=None,
+                dropout_p=0.0 if not self.training else self.attn_dropout,
+                is_causal=False
+            )  # (B,H,2,D)
+
+        y = y.transpose(1, 2).contiguous().view(B, 2, C)  # (B,2,C)
         y = self.out_proj(y)
         y = self.proj_dropout(y)
         return y
