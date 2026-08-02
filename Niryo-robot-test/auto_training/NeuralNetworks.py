@@ -1,7 +1,64 @@
 from torch import  nn
-from myMLlib import  RegClsAttention, MultiHeadSelfAttention, RC_CrossAttention, WqAttention, MutiTaskCAttention
+from myMLlib import  RegClsAttention, MultiHeadSelfAttention, RC_CrossAttention, WqAttention, MutiTaskCAttention,SinusoidalPositionalEncoding
 import torch
+from torch.nn.attention import sdpa_kernel, SDPBackend
+import torch.nn.functional as F
 
+class ShareAttention(nn.Module):
+    def __init__(self, vec_dim, num_heads, emb_length=2, share_feature=16,
+                 attn_dropout=0.0, proj_dropout=0.0,
+                 backend="math", causal=False, bias=True):
+        super().__init__()
+        assert vec_dim % num_heads == 0
+        self.backend = {
+            "efficient": SDPBackend.EFFICIENT_ATTENTION,
+            "math":      SDPBackend.MATH,
+            "flash":     SDPBackend.FLASH_ATTENTION,
+            "cudnn":     SDPBackend.CUDNN_ATTENTION,
+            "overrideable": SDPBackend.OVERRIDEABLE,
+        }[backend]
+        self.num_heads  = num_heads
+        self.head_dim   = vec_dim // num_heads
+        self.emb_length = emb_length
+        self.share_dim  = share_feature
+        self.unique_dim = vec_dim - share_feature
+        self.causal     = causal
+        self.attn_dropout = float(attn_dropout)
+
+        self.pos_enc  = SinusoidalPositionalEncoding(vec_dim)
+        # K/V 对整个序列：一个融合线性层出 K 和 V
+        self.Wkv      = nn.Linear(vec_dim, 2 * vec_dim, bias=bias)
+        # Q 只对最后一个 token
+        self.Wq       = nn.Linear(vec_dim, share_feature + emb_length * self.unique_dim, bias=bias)
+        self.out_proj = nn.Linear(vec_dim, vec_dim, bias=bias)
+        self.proj_dropout = nn.Dropout(proj_dropout)
+
+    def forward(self, x):
+        B, T, C = x.shape
+        H, D, L = self.num_heads, self.head_dim, self.emb_length
+
+        x = self.pos_enc(x)
+
+        # --- Q: 只取最后一个 token，直接 reshape 到多头 ---
+        q = self.Wq(x[:, -1, :])  #.view(B, L, H, D).transpose(1, 2)   # (B,H,L,D)
+        q = torch.stack((q[:,:C],q[:,self.unique_dim:]),dim=1).view(B, L, H, D).transpose(1, 2)
+        # --- K/V: 融合投影 + 一次 reshape + chunk ---
+        kv = self.Wkv(x).view(B, T, 2, H, D)                        # (B,T,2,H,D)
+        kv = kv.permute(2, 0, 3, 1, 4)                               # (2,B,H,T,D)
+        k, v = kv.unbind(0)                                           # (B,H,T,D) each
+
+        with sdpa_kernel(self.backend):
+            y = F.scaled_dot_product_attention(
+                q, k, v,
+                attn_mask=None,
+                dropout_p=self.attn_dropout if self.training else 0.0,
+                is_causal=self.causal
+            )                                                         # (B,H,L,D)
+
+        y = y.transpose(1, 2).reshape(B, L, C)                       # (B,L,C)
+        y = self.proj_dropout(self.out_proj(y))
+        return y
+    
 
 class RegModule(nn.Module):
     def __init__(self, in_dim:int, arms:int, necks:int,dropout=1e-3):
@@ -192,7 +249,7 @@ class MTCrossModel(nn.Module):
         x = self.pre_ln(x)
         x = self.attn(self.querys, x)                   # (B, 2, C)  q/k/v are produced & used here
         # x = res  + x[:,-1:,:]
-        x = self.post_ln(x)
+        # x = self.post_ln(x)
         logits = self.classifier(x[:,0,:])               # (B, num_classes)
         added = torch.cat((logits.detach(),x[:,1,:]),dim=1)
         depth = self.regression(added).squeeze(-1)
@@ -213,5 +270,28 @@ class WithoutAttention(nn.Module):
     def forward(self,x):  # token_ids: (B, T)
         logits = self.classifier(x)               # (B, num_classes)
         added = torch.cat((logits,x),dim=1)
+        depth = self.regression(added).squeeze(-1)
+        return logits, depth
+
+class ShareLastToken(nn.Module):
+    def __init__(self, vec_dim=64, num_heads=4, num_classes=2, share_feature=16,attn_dropout=0.001, cls_dropout = 0.001,reg_dropout=0.001):
+        super().__init__()
+        self.attn = ShareAttention(vec_dim, num_heads, emb_length=2, share_feature=share_feature, attn_dropout=attn_dropout,proj_dropout=0.1,backend="math")
+        self.pre_ln = nn.LayerNorm(vec_dim)
+        self.post_ln = nn.LayerNorm(vec_dim)
+        self.classifier = nn.Sequential(
+            nn.Linear(vec_dim,16),
+            nn.GELU(),
+            nn.Dropout(cls_dropout),
+            nn.Linear(16,num_classes)
+        )
+        self.regression = RegModule(in_dim=vec_dim + num_classes, arms=24, necks=36, dropout=reg_dropout)
+
+    def forward(self,x):  # token_ids: (B, T)
+        res = self.attn(self.pre_ln(x))                   # (B, 2, C)  q/k/v are produced & used here
+        x = res  + x[:,-1:,:]
+        x = self.post_ln(x)
+        logits = self.classifier(x[:,0,:])               # (B, num_classes)
+        added = torch.cat((logits.detach(),x[:,1,:]),dim=1)
         depth = self.regression(added).squeeze(-1)
         return logits, depth

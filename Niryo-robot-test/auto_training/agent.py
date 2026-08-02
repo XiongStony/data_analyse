@@ -3,7 +3,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 from myMLlib import set_seed,  WMSE, count_parameters, get_R, get_optimizer_weight_decay_parameters
 from auto_training_fun import Wor, find_weight, get_window_Xy
-from NeuralNetworks import Traditional, RegClassifier, CrossAtten, LastToken, W2qLastToken,MTCrossModel, WithoutAttention
+from NeuralNetworks import Traditional, RegClassifier, CrossAtten, LastToken, W2qLastToken,MTCrossModel, WithoutAttention,ShareLastToken
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, confusion_matrix,  roc_curve, roc_auc_score
 import torch
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     materials = list(materials.values())
     with open("parameters.yml",'r') as file:
         all_parameters = yaml.safe_load(file)
-        NN_parameters = all_parameters["W2qLastTokenNN"]
+        NN_parameters = all_parameters["ShareLastTokenNN"]
 
     plt.rcParams.update({
         'font.size': 14,
@@ -255,7 +255,7 @@ if __name__ == "__main__":
     set_seed(seed)
 
     ## ======Model =========
-    model = W2qLastToken(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+    model = ShareLastToken(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
 
     optimizer = optim.Adam(model.parameters(), weight_decay=weight_decay, lr=pre_training_learning_rate)
     num_epochs = args.epoch
