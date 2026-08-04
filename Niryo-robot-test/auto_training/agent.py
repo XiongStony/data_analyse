@@ -289,7 +289,7 @@ if __name__ == "__main__":
                 verify_cls_losses.append(cls_item)
                 reg_item = ver_reg_loss.item()
                 verify_reg_losses.append(reg_item)
-                l = 1 * reg_item + 8 * cls_item
+                l = 1 * reg_item + 10 * cls_item
             if l < best_loss and epoch > 4000:
                 best_loss = l
                 best_epoch = epoch
