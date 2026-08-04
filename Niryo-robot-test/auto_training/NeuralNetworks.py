@@ -40,8 +40,8 @@ class ShareAttention(nn.Module):
         x = self.pos_enc(x)
 
         # --- Q: 只取最后一个 token，直接 reshape 到多头 ---
-        q = self.Wq(x[:, -1, :])  #.view(B, L, H, D).transpose(1, 2)   # (B,H,L,D)
-        q = torch.stack((q[:,:C],q[:,self.unique_dim:]),dim=1).view(B, L, H, D).transpose(1, 2)
+        q = self.Wq(x[:, -1, :]) 
+        q = torch.stack((q[:,:C],q[:,self.unique_dim:]),dim=1).view(B, L, D, H).permute(0,3,1,2)  # (B,H,L,D)
         # --- K/V: 融合投影 + 一次 reshape + chunk ---
         kv = self.Wkv(x).view(B, T, 2, H, D)                        # (B,T,2,H,D)
         kv = kv.permute(2, 0, 3, 1, 4)                               # (2,B,H,T,D)
@@ -277,8 +277,7 @@ class ShareLastToken(nn.Module):
     def __init__(self, vec_dim=64, num_heads=4, num_classes=2, share_feature=16,attn_dropout=0.001, cls_dropout = 0.001,reg_dropout=0.001):
         super().__init__()
         self.attn = ShareAttention(vec_dim, num_heads, emb_length=2, share_feature=share_feature, attn_dropout=attn_dropout,proj_dropout=0.1,backend="math")
-        self.pre_ln = nn.LayerNorm(vec_dim)
-        self.post_ln = nn.LayerNorm(vec_dim)
+        self.ln = nn.LayerNorm(vec_dim)
         self.classifier = nn.Sequential(
             nn.Linear(vec_dim,16),
             nn.GELU(),
@@ -288,9 +287,9 @@ class ShareLastToken(nn.Module):
         self.regression = RegModule(in_dim=vec_dim + num_classes, arms=24, necks=36, dropout=reg_dropout)
 
     def forward(self,x):  # token_ids: (B, T)
-        res = self.attn(self.pre_ln(x))                   # (B, 2, C)  q/k/v are produced & used here
-        x = res  + x[:,-1:,:]
-        x = self.post_ln(x)
+        res = self.attn(x)                   # (B, 2, C)  q/k/v are produced & used here
+        x = self.ln(res  + x[:,-1:,:])
+
         logits = self.classifier(x[:,0,:])               # (B, num_classes)
         added = torch.cat((logits.detach(),x[:,1,:]),dim=1)
         depth = self.regression(added).squeeze(-1)
