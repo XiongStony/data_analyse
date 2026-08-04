@@ -1,0 +1,8 @@
+ 
+ ShareLastToken, att17 , seed = 38, r = 32,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 7, Train Loss = 0.051941197365522385, reg best loss = 0.13443168997764587, cls best loss = 0.00046575802844017744, 
+             reg_dropout = 0.1, reg_weight = 0.8, mode parameters = 7899
+         final best loss = 0.14345791249070317 final b reg = 0.13651520013809204 final b cls = 0.0006942712352611125
+         R:0.9001618027687073,  MSE:0.1339823603630066,  RMSE:0.36603599786758423,  MAE:0.2441675364971161 
+         share_feature = 20

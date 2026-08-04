@@ -35,7 +35,7 @@ if __name__ == "__main__":
     with open("parameters.yml",'r') as file:
         all_parameters = yaml.safe_load(file)
         NN_parameters = all_parameters["ShareLastTokenNN"]
-
+    name = NN_parameters["name"]
     plt.rcParams.update({
         'font.size': 14,
         'axes.titlesize': 20,
@@ -198,7 +198,7 @@ if __name__ == "__main__":
     best_reg_losses = {"epoch": [], "val": []}
     best_cls_losses = {"epoch": [], "val": []}
 
-    if NN_parameters["name"] == "WithoutAttention":
+    if name == "WithoutAttention":
         win = 1
         fixwin = 10
         X_pre, y_pre = get_window_Xy(fixwin, channelist, labellist, depthlist)
@@ -255,8 +255,13 @@ if __name__ == "__main__":
     set_seed(seed)
 
     ## ======Model =========
-    model = ShareLastToken(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
-
+    if name == "ShareLastToken":
+        share_featrue = NN_parameters["share_feature"]
+        model = ShareLastToken(X.shape[-1],num_classes=2,share_feature=share_featrue, num_heads=numhead,
+                               cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+    else :
+        model = LastToken(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+    print(name)
     optimizer = optim.Adam(model.parameters(), weight_decay=weight_decay, lr=pre_training_learning_rate)
     num_epochs = args.epoch
 
@@ -432,7 +437,8 @@ if __name__ == "__main__":
         cls wrong prediction = {cls_wrong_predicts}, Train Loss = {loss.item()}, reg best loss = {best_reg_loss}, cls best loss = {best_cls_loss}, \n \
             reg_dropout = {reg_dropout}, reg_weight = {w_reg}, mode parameters = {para}\n \
         final best loss = {best_loss} final b reg = {b_reg_loss} final b cls = {b_cls_loss}\n \
-        R:{R},  MSE:{MSE},  RMSE:{RMSE},  MAE:{MAE} \n"
+        R:{R},  MSE:{MSE},  RMSE:{RMSE},  MAE:{MAE} \n \
+        share_feature = {share_featrue if name == "ShareLastToken" else "None"}\n"
     
     elif args.mode == "test":
         text = f" \n {model.__class__.__name__}, modelnum = {model_num}, r = {r},  atthead = {numhead}, atten_dropout = {atten_dropout}, \n \

@@ -234,8 +234,6 @@ class MTCrossModel(nn.Module):
         D = vec_dim // num_heads
         self.querys = nn.Parameter(torch.zeros(1, num_heads, 2, D))
         nn.init.trunc_normal_(self.querys, std=0.02)
-
-        self.pre_ln = nn.LayerNorm(vec_dim)
         self.post_ln = nn.LayerNorm(vec_dim)
         self.classifier = nn.Sequential(
             nn.Linear(vec_dim,16),
@@ -246,10 +244,10 @@ class MTCrossModel(nn.Module):
         self.regression = RegModule(in_dim=vec_dim + num_classes, arms=24, necks=36, dropout=reg_dropout)
 
     def forward(self,x):  # token_ids: (B, T)
-        x = self.pre_ln(x)
+        # x = self.pre_ln(x)
         x = self.attn(self.querys, x)                   # (B, 2, C)  q/k/v are produced & used here
         # x = res  + x[:,-1:,:]
-        # x = self.post_ln(x)
+        x = self.post_ln(x)
         logits = self.classifier(x[:,0,:])               # (B, num_classes)
         added = torch.cat((logits.detach(),x[:,1,:]),dim=1)
         depth = self.regression(added).squeeze(-1)

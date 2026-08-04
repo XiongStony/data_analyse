@@ -3,7 +3,7 @@ auto_training_fixdata:
   fixed_win: 15
 
 TraditionalNN:
-    name: "Traditional"
+    name: Traditional
     best: !!int 1
     seed: !!int 41
     numhead: !!int 4
@@ -15,7 +15,7 @@ TraditionalNN:
     w_reg: 0.5
 
 WithoutAttentionNN:
-    name: "WithoutAttention"
+    name: WithoutAttention
     best: !!int 1
     seed: !!int 43
     numhead: !!int 0
@@ -27,7 +27,7 @@ WithoutAttentionNN:
     w_reg: 0.4
     
 LastTokenNN:
-    name: “LastToken”
+    name: LastToken
     best: !!int 7
     seed: !!int 35
     numhead: !!int 4
@@ -39,7 +39,7 @@ LastTokenNN:
     w_reg: 0.8
 
 W2qLastTokenNN:
-    name: ”W2qLastToken“
+    name: W2qLastToken
     best: !!int 65
     seed: !!int 35
     numhead: !!int 4
@@ -51,9 +51,9 @@ W2qLastTokenNN:
     w_reg: 0.75
 
 MTCrossModelNN: 
-    name: "MTCrossModel"
+    name: MTCrossModel
     best: !!int 2
-    seed: !!int 35
+    seed: !!int 38
     numhead: !!int 4
     atten_dropout: 0.2
     cls_dropout: 0.1
@@ -63,9 +63,9 @@ MTCrossModelNN:
     w_reg: 0.8
 
 ShareLastTokenNN:
-    name: ”ShareLastToken“
+    name: ShareLastToken
     best: !!int 6
-    seed: !!int 39
+    seed: !!int 38
     numhead: !!int 4
     share_feature: 20
     atten_dropout: 0.2
@@ -73,4 +73,4 @@ ShareLastTokenNN:
     reg_dropout: 0.1
     weight_decay: 0.0
     learning_rate: !!float 1e-3
-    w_reg: 0.8
+    w_reg: 0.7
