@@ -4,7 +4,7 @@ auto_training_fixdata:
 
 TraditionalNN:
     name: Traditional
-    best: !!int 1
+    best: !!int 3
     seed: !!int 41
     numhead: !!int 4
     atten_dropout: 0.2
@@ -52,7 +52,7 @@ W2qLastTokenNN:
 
 MTCrossModelNN: 
     name: MTCrossModel
-    best: !!int 2
+    best: !!int 7
     seed: !!int 40
     numhead: !!int 4
     atten_dropout: 0.2

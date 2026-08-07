@@ -1,0 +1,13 @@
+ 
+ MTCrossModel, modelnum = 7, r = 40,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 10, mode parameters = 8615
+         share_feature = None Random Splite = True
+        R:0.8909399509429932,  MSE:0.14607031643390656, RMSE:0.3821914792060852,  MAE:0.2624044418334961, Train MSE:0.05803201347589493
+ 
+        mse
+ 2mm : 0.072
+ 3mm : 0.066 
+ 4mm : 0.194 
+ 5mm : 0.156
+ 6mm : 0.174

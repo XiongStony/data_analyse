@@ -1,0 +1,13 @@
+ 
+ Traditional, modelnum = 3, r = 40,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 26, mode parameters = 10175
+         share_feature = None Random Splite = True
+        R:0.8701274394989014,  MSE:0.17394568026065826, RMSE:0.4170679450035095,  MAE:0.23858989775180817, Train MSE:0.017690183594822884
+ 
+        mse
+ 2mm : 0.134
+ 3mm : 0.092 
+ 4mm : 0.201 
+ 5mm : 0.202
+ 6mm : 0.203
