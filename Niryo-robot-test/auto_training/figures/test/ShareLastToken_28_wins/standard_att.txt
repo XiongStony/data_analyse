@@ -1,0 +1,13 @@
+ 
+ ShareLastToken, modelnum = 28, r = 40,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         mode parameters = 10831
+         share_feature = 24 Random Splite = True
+        R:0.914415180683136,  MSE:0.11462860554456711, RMSE:0.33856847882270813,  MAE:0.19916361570358276, Train MSE:0.026240715757012367
+ 
+        mse
+ 2mm : 0.075
+ 3mm : 0.046 
+ 4mm : 0.178 
+ 5mm : 0.117
+ 6mm : 0.121

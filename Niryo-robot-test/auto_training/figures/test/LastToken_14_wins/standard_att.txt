@@ -1,0 +1,26 @@
+ 
+ LastToken, modelnum = 14, r = 40,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         mode parameters = 10175
+         share_feature = None Random Splite = True
+        R:0.8926512598991394,  MSE:0.1437782496213913, RMSE:0.37918102741241455,  MAE:0.23423554003238678, Train MSE:0.026324095204472542
+ 
+        mse
+ 2mm : 0.057
+ 3mm : 0.064 
+ 4mm : 0.172 
+ 5mm : 0.163
+ 6mm : 0.182
+ 
+ LastToken, modelnum = 14, r = 40,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 6, mode parameters = 10175
+         share_feature = None Random Splite = True
+        R:0.8926512598991394,  MSE:0.1437782496213913, RMSE:0.37918102741241455,  MAE:0.23423554003238678, Train MSE:0.026324095204472542
+ 
+        mse
+ 2mm : 0.057
+ 3mm : 0.064 
+ 4mm : 0.172 
+ 5mm : 0.163
+ 6mm : 0.182

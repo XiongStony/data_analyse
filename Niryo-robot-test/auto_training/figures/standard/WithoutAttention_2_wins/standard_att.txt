@@ -1,0 +1,8 @@
+ 
+ WithoutAttention, att2 , seed = 43, r = 40,  atthead = 0, atten_dropout = 0, 
+         win = 1, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 7, Train Loss = 0.057193078100681305, reg best loss = 0.2747643291950226, cls best loss = 0.0016176338540390134, 
+             reg_dropout = 0.1, reg_weight = 0.4, mode parameters = 3535
+         final best loss = 0.2912984003778547 final b reg = 0.27481916546821594 final b cls = 0.0016479234909638762
+         R:0.7962813377380371,  MSE:0.27458134293556213,  RMSE:0.524005115032196,  MAE:0.40327557921409607 
+         share_feature = None

@@ -16,7 +16,7 @@ TraditionalNN:
 
 WithoutAttentionNN:
     name: WithoutAttention
-    best: !!int 1
+    best: !!int 4
     seed: !!int 43
     numhead: !!int 0
     atten_dropout: 0
@@ -24,24 +24,24 @@ WithoutAttentionNN:
     reg_dropout: 0.1
     weight_decay: 0.0
     learning_rate: !!float 1e-3
-    w_reg: 0.4
+    w_reg: 0.8
     
 LastTokenNN:
     name: LastToken
-    best: !!int 7
-    seed: !!int 35
+    best: !!int 14
+    seed: !!int 38
     numhead: !!int 4
     atten_dropout: 0.2
     cls_dropout: 0.1
     reg_dropout: 0.1
     weight_decay: 0.0
     learning_rate: !!float 1e-3
-    w_reg: 0.8
+    w_reg: 0.9
 
 W2qLastTokenNN:
     name: W2qLastToken
     best: !!int 65
-    seed: !!int 35
+    seed: !!int 40
     numhead: !!int 4
     atten_dropout: 0.2
     cls_dropout: 0.1
@@ -53,7 +53,7 @@ W2qLastTokenNN:
 MTCrossModelNN: 
     name: MTCrossModel
     best: !!int 2
-    seed: !!int 38
+    seed: !!int 40
     numhead: !!int 4
     atten_dropout: 0.2
     cls_dropout: 0.1
@@ -64,13 +64,13 @@ MTCrossModelNN:
 
 ShareLastTokenNN:
     name: ShareLastToken
-    best: !!int 6
-    seed: !!int 38
+    best: !!int 34
+    seed: !!int 42
     numhead: !!int 4
-    share_feature: 20
+    share_feature: 24
     atten_dropout: 0.2
     cls_dropout: 0.1
     reg_dropout: 0.1
     weight_decay: 0.0
     learning_rate: !!float 1e-3
-    w_reg: 0.7
+    w_reg: 0.85

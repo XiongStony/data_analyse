@@ -217,10 +217,9 @@ class LastToken(nn.Module):
         self.regression = RegModule(in_dim=vec_dim + num_classes, arms=24, necks=36, dropout=reg_dropout)
 
     def forward(self,x):  # token_ids: (B, T)
-        x = self.ln(x)
         res = self.attn(x).squeeze()                   # (B, C)  q/k/v are produced & used here
         x = res + x[:,-1,:]
-
+        x = self.ln(x)
         logits = self.classifier(x)               # (B, num_classes)
         added = torch.cat((logits.detach(),x),dim=1)
         depth = self.regression(added).squeeze(-1)

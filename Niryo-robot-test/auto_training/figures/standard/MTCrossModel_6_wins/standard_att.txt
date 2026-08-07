@@ -1,0 +1,8 @@
+ 
+ MTCrossModel, att6 , seed = 38, r = 40,  atthead = 4, atten_dropout = 0.2, 
+         win = 10, cls_dropout = 0.1, learning_rate = 0.001, 
+         cls wrong prediction = 1, Train Loss = 0.0680561438202858, reg best loss = 0.12390057742595673, cls best loss = 6.408314220607281e-05, 
+             reg_dropout = 0.1, reg_weight = 0.8, mode parameters = 8615
+         final best loss = 0.12519179726950824 final b reg = 0.12390057742595673 final b cls = 0.00016140248044393957
+         R:0.9041529893875122,  MSE:0.12837335467338562,  RMSE:0.35829228162765503,  MAE:0.24676506221294403 
+         share_feature = None Random Splite = True

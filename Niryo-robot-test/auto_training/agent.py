@@ -34,7 +34,7 @@ if __name__ == "__main__":
     materials = list(materials.values())
     with open("parameters.yml",'r') as file:
         all_parameters = yaml.safe_load(file)
-        NN_parameters = all_parameters["ShareLastTokenNN"]
+        NN_parameters = all_parameters["MTCrossModelNN"]  ## model
     name = NN_parameters["name"]
     plt.rcParams.update({
         'font.size': 14,
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     else:
         S = np.load(savepathS)
         V = np.load(savepathV)
-    r = 32
+    r = 40
     Vr = V[:,:r]
     print(Vr.shape)
     Xpp = snapshot @ Vr
@@ -213,7 +213,8 @@ if __name__ == "__main__":
         X, y = X_pre, y_pre
         X_r, y_r = X_r_pre, y_r_pre
 
-    X_ver,X_te,y_ver,y_te = train_test_split(X_r, y_r, test_size=0.5,shuffle=True)
+    random_split = True
+    X_ver,X_te,y_ver,y_te = train_test_split(X_r, y_r, test_size=0.5, shuffle=random_split, random_state=42)
     X_train_tensor = torch.tensor(X, dtype=torch.float32).to(device)
     cls_y_train_tensor = torch.tensor(y[:,0], dtype=torch.long).squeeze().to(device)
     reg_y_train_tensor = torch.tensor(y[:,1], dtype=torch.float32).squeeze().to(device)
@@ -255,12 +256,19 @@ if __name__ == "__main__":
     set_seed(seed)
 
     ## ======Model =========
-    if name == "ShareLastToken":
-        share_featrue = NN_parameters["share_feature"]
-        model = ShareLastToken(X.shape[-1],num_classes=2,share_feature=share_featrue, num_heads=numhead,
-                               cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
-    else :
-        model = LastToken(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+    match name:
+        case "ShareLastToken":
+            share_featrue = NN_parameters["share_feature"]
+            model = ShareLastToken(X.shape[-1],num_classes=2,share_feature=share_featrue, num_heads=numhead,
+                                cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+        case "LastToken":
+            model = LastToken(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+        case "MTCrossModel":
+            model = MTCrossModel(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+        case "Traditional":
+            model = Traditional(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
+        case "WithoutAttention":
+            model = WithoutAttention(X.shape[-1],num_classes=2,num_heads=numhead,cls_dropout=cls_dropout, attn_dropout=atten_dropout, reg_dropout=reg_dropout).to(device)
     print(name)
     optimizer = optim.Adam(model.parameters(), weight_decay=weight_decay, lr=pre_training_learning_rate)
     num_epochs = args.epoch
@@ -294,7 +302,7 @@ if __name__ == "__main__":
                 verify_cls_losses.append(cls_item)
                 reg_item = ver_reg_loss.item()
                 verify_reg_losses.append(reg_item)
-                l = 1 * reg_item + 10 * cls_item
+                l = 1 * reg_item + 8 * cls_item
             if l < best_loss and epoch > 4000:
                 best_loss = l
                 best_epoch = epoch
@@ -438,12 +446,13 @@ if __name__ == "__main__":
             reg_dropout = {reg_dropout}, reg_weight = {w_reg}, mode parameters = {para}\n \
         final best loss = {best_loss} final b reg = {b_reg_loss} final b cls = {b_cls_loss}\n \
         R:{R},  MSE:{MSE},  RMSE:{RMSE},  MAE:{MAE} \n \
-        share_feature = {share_featrue if name == "ShareLastToken" else "None"}\n"
+        share_feature = {share_featrue if name == "ShareLastToken" else "None"} Random Splite = {random_split}\n"
     
     elif args.mode == "test":
         text = f" \n {model.__class__.__name__}, modelnum = {model_num}, r = {r},  atthead = {numhead}, atten_dropout = {atten_dropout}, \n \
         win = {win}, cls_dropout = {cls_dropout}, learning_rate = {pre_training_learning_rate}, \n \
-        mode parameters = {para}\n \
+        cls wrong prediction = {cls_wrong_predicts}, mode parameters = {para}\n \
+        share_feature = {share_featrue if name == "ShareLastToken" else "None"} Random Splite = {random_split}\n\
         R:{R},  MSE:{MSE}, RMSE:{RMSE},  MAE:{MAE}, Train MSE:{train_MSE}\n \n\
         mse\n 2mm : {depth_mse[0]:.3f}\n 3mm : {depth_mse[1]:.3f} \n 4mm : {depth_mse[2]:.3f} \n 5mm : {depth_mse[3]:.3f}\n 6mm : {depth_mse[4]:.3f}\n"
 
